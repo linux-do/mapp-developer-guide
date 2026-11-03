@@ -42,8 +42,8 @@ try {
 - 头像支持 PNG、JPEG、GIF、WebP 和 AVIF。不支持的图片格式返回 `null`。
 - 主题包含颜色、明暗、语言、容器尺寸和减少动效偏好；`onChange` 返回取消订阅函数。
 - 启动参数返回 `{ query: Record<string, string[]>, hash }` 快照；重复 query 保留，hash 不含 `#`。总量最多 8 KiB，不能作为身份凭据。
-- 媒体只播放 manifest 声明的包内资源或固定 CDN 素材。远程媒体同时需要 `assets.remote` 和对应播放权限。剪贴板文字最多 4 KiB；剪贴板、全屏和播放按页面提示确认。
-- 一般调用最多 16 并发、60 次/分钟。处理 `PERMISSION_DENIED`、`USER_CANCELLED`、`TIMEOUT`、`MESSAGE_LIMIT` 和离开后的 `APP_UNLOADED`。
+- 媒体只播放 manifest 声明的包内资源或固定 CDN 素材。远程媒体同时需要 `assets.remote` 和对应播放权限。剪贴板文字最多 4 KiB；剪贴板、全屏和视频播放逐次确认。音频使用本次进入应用时的声音选择。
+- 一般调用最多 60 次/分钟。`audio.play` 使用独立的 20 次/秒额度；`audio.stop` 不占这两项额度。所有调用合计最多 16 个待响应请求，并受每秒 120 条消息的总限制。处理 `PERMISSION_DENIED`、`USER_CANCELLED`、`TIMEOUT`、`RATE_LIMIT`、`MESSAGE_LIMIT` 和离开后的 `APP_UNLOADED`。
 
 获取当前论坛界面语言需 `theme.read`，语言代码沿用 Discourse，例如 `zh_CN`、`zh_TW`、`en`：
 
@@ -51,6 +51,14 @@ try {
 const { locale } = await sdk.theme.get();
 const unsubscribe = sdk.theme.onChange(({ locale }) => updateLanguage(locale));
 ```
+
+## 音频播放
+
+已批准 `audio.play` 的应用在代码执行前让用户选择开启声音或静音进入。选择只对本次运行有效，关闭或刷新后重选；运行中的 `audio.play/stop` 不弹框。静音时 `play` 正常返回 `{ handle }`，不发声，也不下载远程音频，可照常调用 `stop(handle)`。
+
+接口和权限声明保持兼容，现有应用无需修改调用代码或重新打包；平台更新后重新打开应用即可。
+
+每个实例最多同时播放 4 路音频、2 路视频；满额直接拒绝新播放，不排队补播。音效不应阻塞输入状态；长按开始时先更新状态，松手早于 `play` 返回时应在取得句柄后立即停止。处理失败，不要循环重试，见 [长按操作示例](../docs/developer-guide.md#音频与长按操作)。
 
 ## 包内文件
 
@@ -92,7 +100,7 @@ if (sdk.permissions.has("assets.remote")) {
 
 `readText` 使用 UTF-8，`readJson` 继续解析 JSON，`readBytes` 返回文件原始字节。只传已声明的虚拟路径，不能传任意 URL。每个清单最多 128 项、每项 32 MiB、总计 256 MiB；并发下载最多 2 个不同文件，下载截止 30 秒，当前实例的已验证缓存最多 64 MiB。相同文件的并发读取合并；只在每次下载后校验一次，缓存命中复用已验证结果。
 
-远程读取的 SDK 调用期限为 45 秒（含排队），远程音视频播放为 105 秒（含下载和确认），包内素材沿用原有期限。图片、音效和关卡数据应分批按需加载；视频必须完整校验后才播放，适用于短视频，不支持 HLS/DASH 或边下载边播放。
+远程读取的 SDK 调用期限为 45 秒（含排队），远程音视频播放为 105 秒（含下载；视频还包括逐次确认），包内播放调用为 60 秒。这些是调用上限，音频运行中不等待确认。图片、音效和关卡数据应分批按需加载；视频必须完整校验后才播放，适用于短视频，不支持 HLS/DASH 或边下载边播放。
 
 CDN 需允许论坛 origin 的 CORS GET，且不依赖 Cookie、认证头或重定向。改动内容或 URL 后应更新描述符并重新提审；校验失败没有忽略 SHA-256 的回退。常见失败包括 `ASSET_NOT_FOUND`、`PERMISSION_DENIED`、`REMOTE_ASSET_FAILED`、`REMOTE_ASSET_INVALID`、`RATE_LIMIT` 和 `APP_UNLOADED`。远程素材不提供脚本、HTML、CSS 的加载执行能力。
 

@@ -126,9 +126,9 @@ const atlas: RemoteAssetDeclaration = {
 // 将 atlas 写入 manifest.remote_assets["images/atlas.webp"]。
 ```
 
-通过 `sdk.assets.readBytes/readText/readJson` 传入声明的虚拟路径读取，图片字节按 [SDK 示例](../sdk/README.md#包内文件) 创建 Blob URL。远程音视频使用 `sdk.audio.play("music")` / `sdk.video.play(assetId)`，仍需对应播放权限及用户确认。请提供加载进度或等待提示，处理拒绝、超时和 CDN 不可用；不要因素材失败阻塞全部界面。
+通过 `sdk.assets.readBytes/readText/readJson` 传入声明的虚拟路径读取，图片字节按 [SDK 示例](../sdk/README.md#包内文件) 创建 Blob URL。远程音视频使用 `sdk.audio.play("music")` / `sdk.video.play(assetId)`，仍需对应播放权限。音频遵循进入应用时的声音选择，视频逐次确认。请提供加载进度或等待提示，处理拒绝、超时和 CDN 不可用；不要因素材失败阻塞全部界面。
 
-远程媒体先完成素材下载与校验，再等待播放确认；下载阶段最多 30 秒，后续用户确认最多 60 秒。
+远程媒体须先完整下载并校验，下载阶段最多 30 秒；视频随后等待用户确认，最多 60 秒。静音进入时，`audio.play` 正常返回可停止的句柄，不发声，也不会下载远程音频。远程播放调用的总期限仍为 105 秒，音频运行中无需等待确认。
 
 这个通路适合小游戏素材和短视频，不提供边下载边播放或 HLS/DASH。先渲染加载界面并调用 `lifecycle.ready()`，再按关卡按需读取素材，避免等待整套资源后才显示首屏。建议同时请求不超过两个大文件；排队也计入远程读取的 45 秒 SDK 调用期限。
 
@@ -142,6 +142,41 @@ const atlas: RemoteAssetDeclaration = {
 | 支持 MIME | `image/png`、`image/jpeg`、`image/gif`、`image/webp`、`image/avif`、`audio/wav`、`audio/mpeg`、`audio/ogg`、`video/mp4`、`video/webm`、`application/json`、`application/octet-stream` |
 
 清单元数据仍计入 manifest 的 64 KiB 上限。远程素材下载后先验证完整大小、MIME 和 SHA-256，再提供给应用；命中已验证缓存时复用结果，不在游戏每帧重复计算哈希。缓存淘汰、退出后重新进入或重试下载时会重新验证。请分批加载关卡与大型素材，释放不再使用的 Blob URL；包内文件继续遵守原来的 8 MiB 单文件限制。
+
+## 音频与长按操作
+
+已批准 `audio.play` 的应用在代码执行前显示“开启声音”和“静音进入”。选择只在本次运行有效，关闭或刷新后重新选择；`audio.play/stop` 运行中不弹框，静音播放同样返回 `{ handle }`，可照常停止。视频、剪贴板和全屏仍逐次确认。
+
+现有应用无需修改音频调用代码，也无需为此重新打包或提审。平台更新后，重新打开应用即可使用新的声音选择流程。
+
+每个实例最多同时播放 4 路音频、2 路视频，满额拒绝新播放，不排队补播。`audio.play` 最多 20 次/秒；`audio.stop` 不占播放限额或通用的 60 次/分钟限额，但仍受合计 16 个待响应请求、120 条消息/秒的限制。处理播放失败，避免密集重试。
+
+长按蓄力等操作应先同步更新按下状态，不要 `await` 音效后才记录或结束操作。下面的 `beginCharge`、`endCharge` 分别供 `pointerdown` 和 `pointerup`/`pointercancel` 调用；暂停游戏时也调用 `endCharge`。`charge` 是 manifest 中声明的音频 ID：
+
+```ts
+let charge: { handle?: string } | null = null;
+const stopSound = (handle: string) => {
+  void sdk.audio.stop(handle).catch(() => {});
+};
+
+function beginCharge() {
+  if (charge) return;
+  const press: { handle?: string } = {};
+  charge = press;
+  void sdk.audio.play("charge", { loop: true }).then(({ handle }) => {
+    if (charge === press) press.handle = handle;
+    else stopSound(handle);
+  }).catch(() => {});
+}
+
+function endCharge() {
+  const handle = charge?.handle;
+  charge = null;
+  if (handle) stopSound(handle);
+}
+```
+
+即使松手早于播放 Promise 返回，旧操作的句柄返回后也会立即停止；音效失败不会阻塞按下或松手逻辑。实际游戏还应管理指针捕获，只让对应指针结束本次操作。
 
 ## 开发者服务的 JWT 公钥
 
