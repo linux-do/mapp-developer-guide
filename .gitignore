@@ -1,0 +1,16 @@
+.idea/
+.DS_Store
+.developer-guide-export.json
+*.swp
+node_modules/
+dist/
+.local/
+.pnpm-store/
+*.tsbuildinfo
+*.zip
+*.release.json
+.env
+.env.*
+*.pem
+*.key
+/sdk/src/
