@@ -42,7 +42,7 @@ try {
 - 头像支持 PNG、JPEG、GIF、WebP 和 AVIF。不支持的图片格式返回 `null`。
 - 主题包含颜色、明暗、语言、容器尺寸和减少动效偏好；`onChange` 返回取消订阅函数。
 - 启动参数返回 `{ query: Record<string, string[]>, hash }` 快照；重复 query 保留，hash 不含 `#`。总量最多 8 KiB，不能作为身份凭据。
-- 媒体只播放 manifest 声明的包内资源或固定 CDN 素材。远程媒体同时需要 `assets.remote` 和对应播放权限。剪贴板文字最多 4 KiB；剪贴板、全屏和视频播放逐次确认。音频使用本次进入应用时的声音选择。
+- 媒体只播放 manifest 声明的包内资源或固定 CDN 素材。远程媒体同时需要 `assets.remote` 和对应播放权限。剪贴板文字最多 4 KiB；剪贴板、全屏和视频播放逐次确认。音频输出由本次运行的声音开关控制。
 - 一般调用最多 60 次/分钟。`audio.play` 使用独立的 20 次/秒额度；`audio.stop` 不占这两项额度。所有调用合计最多 16 个待响应请求，并受每秒 120 条消息的总限制。处理 `PERMISSION_DENIED`、`USER_CANCELLED`、`TIMEOUT`、`RATE_LIMIT`、`MESSAGE_LIMIT` 和离开后的 `APP_UNLOADED`。
 
 获取当前论坛界面语言需 `theme.read`，语言代码沿用 Discourse，例如 `zh_CN`、`zh_TW`、`en`：
@@ -54,7 +54,9 @@ const unsubscribe = sdk.theme.onChange(({ locale }) => updateLanguage(locale));
 
 ## 音频播放
 
-已批准 `audio.play` 的应用在代码执行前让用户选择开启声音或静音进入。选择只对本次运行有效，关闭或刷新后重选；运行中的 `audio.play/stop` 不弹框。静音时 `play` 正常返回 `{ handle }`，不发声，也不下载远程音频，可照常调用 `stop(handle)`。
+已声明音频素材并获批 `audio.play` 的应用在代码执行前让用户选择初始声音状态。运行中可通过页面左侧信息按钮后的喇叭随时开启声音或静音；开关只影响本次运行，关闭或刷新后重选。`audio.play/stop` 不弹框，音频由应用控制，平台只提供总声音开关，不显示音频列表或暂停、停止按钮；视频保留原有播放器界面。
+
+静音只关闭输出，既有和新音频仍正常播放、保留进度及独立的 `{ handle }`，也可下载声明的远程音频。`stop(handle)` 照常停止对应音频；取消静音会恢复当前背景音乐或循环音频的声音，不补播已结束的短音效。
 
 接口和权限声明保持兼容，现有应用无需修改调用代码或重新打包；平台更新后重新打开应用即可。
 

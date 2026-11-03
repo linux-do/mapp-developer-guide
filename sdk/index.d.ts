@@ -154,15 +154,15 @@ export interface MiniAppSDK {
     };
     readonly audio: {
         /**
-         * Requires audio.play; uses this run's sound choice without another prompt.
-         * Muted runs return a stoppable handle without sound or remote audio downloads.
+         * Requires audio.play; returns an independent playback handle without prompting.
+         * Muting only silences output; playback, progress and remote downloads continue.
          * Allows four simultaneous sounds and 20 calls per second; excess sounds are rejected, not queued.
          */
         play(asset: string, options?: PlaybackOptions): Promise<{
             handle: string;
         }>;
         /**
-         * Stops this run's handle without prompting, including handles returned while muted.
+         * Stops one playback handle without prompting, whether or not this run is muted.
          * Exempt from play and general per-minute quotas; total pending and message limits still apply.
          */
         stop(handle: string): Promise<null>;
