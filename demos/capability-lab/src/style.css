@@ -363,6 +363,23 @@ body {
   border: 1px solid var(--lab-border);
   background: var(--lab-soft);
 }
+.lab .lab__pointer-pad {
+  min-block-size: 7rem;
+  touch-action: none;
+  user-select: none;
+  border-style: dashed;
+}
+.lab__pointer-pad.is-held {
+  background: var(--lab-soft);
+  border-color: var(--lab-accent);
+  border-style: solid;
+}
+.lab__pointer-lock-canvas {
+  inline-size: 100%;
+  max-inline-size: 20rem;
+  border: 1px solid var(--lab-border);
+  background: var(--lab-soft);
+}
 .lab__results {
   display: grid;
   gap: 0;
@@ -397,6 +414,8 @@ body {
   border-inline-start-color: var(--lab-danger);
 }
 .lab__result[data-state="denied"],
+.lab__result[data-state="unsupported"],
+.lab__result[data-state="restricted"],
 .lab__result[data-state="cancelled"],
 .lab__result[data-state="timeout"] {
   border-inline-start-color: var(--lab-warning);

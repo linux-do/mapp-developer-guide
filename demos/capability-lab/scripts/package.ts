@@ -21,7 +21,9 @@ for (const path of manifest.assets || []) {
   ) {
     throw new Error("Invalid package asset path");
   }
-  files[path] = await readFile(`dist/web/${path}`);
+  if (!Object.hasOwn(files, path)) {
+    files[path] = await readFile(`dist/web/${path}`);
+  }
 }
 const result = await pack({ manifest, files, outputDirectory: "dist/package" });
 console.log(

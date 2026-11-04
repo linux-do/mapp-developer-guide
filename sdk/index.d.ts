@@ -1,21 +1,6 @@
 // Generated from sdk/src by tools/build-sdk.ts.
-export type Permission = "user.read" | "user.lookup" | "launch.read" | "theme.read" | "storage.read" | "storage.write" | "cookies.read" | "cookies.write" | "clipboard.read" | "clipboard.write" | "fullscreen" | "audio.play" | "video.play" | "assets.remote" | "network.request" | "network.websocket";
-export type JsonValue = null | boolean | number | string | JsonValue[] | {
-    [key: string]: JsonValue;
-};
-/** Static CDN resource formats accepted by the platform. */
-export type RemoteAssetMime = "image/png" | "image/jpeg" | "image/gif" | "image/webp" | "image/avif" | "audio/wav" | "audio/mpeg" | "audio/ogg" | "video/mp4" | "video/webm" | "application/json" | "application/octet-stream";
-/** Immutable remote file approved together with the application manifest. */
-export interface RemoteAssetDeclaration {
-    /** Fixed HTTPS resource URL; callers cannot add query parameters or credentials. */
-    url: string;
-    /** Lowercase SHA-256 of the response bytes after HTTP content decoding. */
-    sha256: string;
-    /** Exact file byte length, at most 32 MiB. */
-    size: number;
-    /** Expected response media type, excluding parameters. */
-    mime: RemoteAssetMime;
-}
+import type { HttpMethod, JsonValue, Permission } from "./types.js";
+export type { HttpMethod, JsonValue, Permission, RemoteAssetDeclaration, RemoteAssetMime, } from "./types.js";
 export interface MiniAppUser {
     id: number;
     username: string;
@@ -57,7 +42,6 @@ export interface MiniAppError extends Error {
     /** For example PERMISSION_DENIED, USER_CANCELLED, TIMEOUT or APP_UNLOADED. */
     code?: string;
 }
-export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 export interface HttpRequestOptions {
     /** Must equal the endpoint's approved method when supplied. */
     method?: HttpMethod;
@@ -191,6 +175,11 @@ export interface MiniAppSDK {
         readText(path: string): Promise<string>;
         /** Reads and parses a JSON file. */
         readJson(path: string): Promise<JsonValue>;
+    };
+    /** Compiles and instantiates reviewed package-local WebAssembly files. */
+    readonly wasm: {
+        /** Requires a .wasm path declared in manifest.assets; remote files and URLs are rejected. */
+        instantiate(path: string, imports?: WebAssembly.Imports): Promise<WebAssembly.WebAssemblyInstantiatedSource>;
     };
 }
 /** Returns the app's SDK. */

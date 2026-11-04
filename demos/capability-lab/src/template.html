@@ -342,6 +342,108 @@
       </fieldset>
     </div>
   </section>
+  <section class="lab__section" aria-labelledby="runtime-title">
+    <h2 id="runtime-title" data-text="runtimeTitle"></h2>
+    <p data-text="runtimeHelp"></p>
+    <div class="lab__capabilities">
+      <fieldset class="lab__group">
+        <legend>WebAssembly</legend>
+        <p data-text="wasmHelp"></p>
+        <button type="button" data-action="wasm" data-text="wasm"></button>
+        <pre
+          class="lab__output"
+          id="wasm-output"
+          data-text="wasmPreview"
+          role="status"
+        ></pre>
+        <p class="lab__small" data-text="wasmFailureHelp"></p>
+        <p class="lab__notice" data-text="runtimePolicy"></p>
+      </fieldset>
+      <fieldset class="lab__group">
+        <legend>Web Audio</legend>
+        <p data-text="webAudioHelp"></p>
+        <div class="lab__actions">
+          <button
+            id="web-audio-play"
+            type="button"
+            data-text="webAudioPlay"
+            disabled
+          ></button>
+          <button
+            id="web-audio-stop"
+            type="button"
+            data-text="webAudioStop"
+            disabled
+          ></button>
+        </div>
+        <output
+          class="lab__output"
+          id="web-audio-output"
+          data-text="webAudioPreview"
+          role="status"
+        ></output>
+      </fieldset>
+      <fieldset class="lab__group">
+        <legend data-text="pointerLock"></legend>
+        <p data-text="pointerLockHelp"></p>
+        <div class="lab__actions">
+          <button
+            id="pointer-lock-request"
+            type="button"
+            data-text="pointerLockRequest"
+            disabled
+          ></button>
+          <button
+            id="pointer-lock-exit"
+            type="button"
+            data-text="pointerLockExit"
+            disabled
+          ></button>
+        </div>
+        <canvas
+          class="lab__pointer-lock-canvas"
+          id="pointer-lock-canvas"
+          width="320"
+          height="160"
+          role="img"
+          data-label="pointerLockCanvas"
+        ></canvas>
+        <output
+          class="lab__output"
+          id="pointer-lock-output"
+          data-text="pointerLockPreview"
+          role="status"
+        ></output>
+      </fieldset>
+      <fieldset class="lab__group">
+        <legend data-text="pointerCapture"></legend>
+        <p data-text="pointerHelp"></p>
+        <label class="lab__check"
+          ><input id="pointer-sound" type="checkbox" /><span
+            data-text="pointerSound"
+          ></span
+        ></label>
+        <button
+          class="lab__pointer-pad"
+          id="pointer-pad"
+          type="button"
+          aria-pressed="false"
+          data-text="pointerPad"
+        ></button>
+        <output
+          class="lab__output"
+          id="pointer-output"
+          data-text="pointerIdle"
+          role="status"
+        ></output>
+        <output
+          class="lab__output"
+          id="pointer-audio-output"
+          data-text="notTested"
+        ></output>
+      </fieldset>
+    </div>
+  </section>
   <section class="lab__section" id="network" aria-labelledby="network-title">
     <h2 id="network-title" data-text="networkTitle"></h2>
     <p data-text="networkHelp"></p>

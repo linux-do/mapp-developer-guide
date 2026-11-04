@@ -30,7 +30,9 @@ try {
 | `cookies.read` / `cookies.write`     | `cookies.get/set/remove`                                          |
 | `clipboard.read` / `clipboard.write` | `clipboard.readText/writeText`                                    |
 | `fullscreen`                         | `fullscreen.request/exit`                                         |
+| `pointer.lock`                       | 原生 `Element.requestPointerLock()`、`document.exitPointerLock()` |
 | `audio.play` / `video.play`          | `audio.play(assetId)`、`video.play(assetId)`、对应 `stop(handle)` |
+| `audio.webAudio`                     | 原生在线 `AudioContext`，调用方式仍为浏览器 API                   |
 | `network.request`                    | `http.request(endpointName, options)`                             |
 | `network.websocket`                  | `webSocket.connect(endpointName, options)`                        |
 | `assets.remote`                      | `assets.readBytes/readText/readJson(path)` 读取声明的 CDN 素材    |
@@ -42,7 +44,7 @@ try {
 - 头像支持 PNG、JPEG、GIF、WebP 和 AVIF。不支持的图片格式返回 `null`。
 - 主题包含颜色、明暗、语言、容器尺寸和减少动效偏好；`onChange` 返回取消订阅函数。
 - 启动参数返回 `{ query: Record<string, string[]>, hash }` 快照；重复 query 保留，hash 不含 `#`。总量最多 8 KiB，不能作为身份凭据。
-- 媒体只播放 manifest 声明的包内资源或固定 CDN 素材。远程媒体同时需要 `assets.remote` 和对应播放权限。剪贴板文字最多 4 KiB；剪贴板、全屏和视频播放逐次确认。音频输出由本次运行的声音开关控制。
+- `audio.play/video.play` 只播放 manifest 声明的包内资源或固定 CDN 素材。远程媒体同时需要 `assets.remote` 和对应播放权限。剪贴板文字最多 4 KiB；剪贴板、全屏和视频播放逐次确认。音频输出由本次运行的声音开关控制。
 - 一般调用最多 60 次/分钟。`audio.play` 使用独立的 20 次/秒额度；`audio.stop` 不占这两项额度。所有调用合计最多 16 个待响应请求，并受每秒 120 条消息的总限制。处理 `PERMISSION_DENIED`、`USER_CANCELLED`、`TIMEOUT`、`RATE_LIMIT`、`MESSAGE_LIMIT` 和离开后的 `APP_UNLOADED`。
 
 获取当前论坛界面语言需 `theme.read`，语言代码沿用 Discourse，例如 `zh_CN`、`zh_TW`、`en`：
@@ -52,15 +54,35 @@ const { locale } = await sdk.theme.get();
 const unsubscribe = sdk.theme.onChange(({ locale }) => updateLanguage(locale));
 ```
 
+## 鼠标锁定
+
+需要鼠标锁定时，在 manifest 的 `permissions` 中加入 `pointer.lock` 并提审。批准后直接使用原生 `Element.requestPointerLock()`，没有 `sdk.pointerLock` 包装或平台额外确认框。`mousemove` 的 `movementX/movementY` 是应用内原生事件，不经过 RPC。
+
+在应用自己的用户点击处理函数中、首个 `await` 之前发起请求。浏览器可能返回 Promise 或 `void`；处理同步异常与 Promise 拒绝，并以 `pointerlockchange`、`pointerlockerror` 和 `document.pointerLockElement` 确认结果，不能把方法返回视为成功。
+
+使用 `document.exitPointerLock()` 或 Esc 退出；应用失焦、隐藏或关闭时会自动释放，不自动重锁。优先使用不带选项的标准锁；`unadjustedMovement` 是可选能力，不支持时提供标准锁入口，让用户点击重试。
+
+全屏仍使用 `sdk.fullscreen.request/exit`。若同时需要全屏和锁定，先通过 SDK 进入全屏，再让用户在应用内点击锁定；不要在 `await sdk.fullscreen.request()` 后直接请求原生锁定，此时最初的用户激活已不可依赖。
+
+已有原生锁定代码只需新增权限、重新打包提审，调用方式不变；未使用锁定的应用无需申请。`setPointerCapture()` 用于拖动和长按，不需要 `pointer.lock`，见 [开发说明](../docs/developer-guide.md#鼠标锁定)。
+
 ## 音频播放
 
-已声明音频素材并获批 `audio.play` 的应用在代码执行前让用户选择初始声音状态。运行中可通过页面左侧信息按钮后的喇叭随时开启声音或静音；开关只影响本次运行，关闭或刷新后重选。`audio.play/stop` 不弹框，音频由应用控制，平台只提供总声音开关，不显示音频列表或暂停、停止按钮；视频保留原有播放器界面。
+获批 `audio.webAudio`，或同时获批 `audio.play` 并声明了音频素材的应用，在代码执行前让用户选择初始声音状态。运行中可通过顶部喇叭随时开启声音或静音；开关只影响本次运行，关闭或刷新后重选。`audio.play/stop` 不弹框，音频由应用控制，平台只提供总声音开关，不显示音频列表或暂停、停止按钮；视频保留原有播放器界面。
 
 静音只关闭输出，既有和新音频仍正常播放、保留进度及独立的 `{ handle }`，也可下载声明的远程音频。`stop(handle)` 照常停止对应音频；取消静音会恢复当前背景音乐或循环音频的声音，不补播已结束的短音效。
 
-接口和权限声明保持兼容，现有应用无需修改调用代码或重新打包；平台更新后重新打开应用即可。
+仅使用 `sdk.audio.play/stop` 的现有应用保持兼容，无需增加 `audio.webAudio` 或为声音开关重新打包。使用原生在线 `AudioContext` 的应用需申请 `audio.webAudio` 并重新提审；API 调用仍使用浏览器原生接口。
 
 每个实例最多同时播放 4 路音频、2 路视频；满额直接拒绝新播放，不排队补播。音效不应阻塞输入状态；长按开始时先更新状态，松手早于 `play` 返回时应在取得句柄后立即停止。处理失败，不要循环重试，见 [长按操作示例](../docs/developer-guide.md#音频与长按操作)。
+
+## 原生 Web Audio
+
+获批 `audio.webAudio` 后可使用 `new AudioContext()`。顶部喇叭同步控制其总输出；静音不暂停音频时钟、节点调度或播放进度。每次运行最多保留 4 个未关闭的在线 context，成功 `close()` 后释放名额；退出应用会关闭这些 context。
+
+浏览器的用户手势要求仍然存在：在应用自己的点击处理函数中调用 `context.resume()`，并处理拒绝。先完成首次渲染并调用 `sdk.lifecycle.ready()`，不要等待音频启动或 `resume()` 完成后才显示界面。
+
+`OfflineAudioContext` 可用于离线处理，无需 `audio.webAudio`，也不直接发声。不支持 `createMediaStreamDestination()` 或 AudioWorklet 脚本加载。
 
 ## 包内文件
 
@@ -85,6 +107,22 @@ document.body.append(logo);
 
 图片使用读取到的字节创建 Blob，或使用用户资料接口提供的 Blob 地址；音视频在 `media` 声明后使用 `sdk.audio/video.play()`。包内单文件最多 8 MiB，整个 ZIP 的文件数和大小限制见 [开发说明](../docs/developer-guide.md#项目和运行-zip)。
 
+## WebAssembly
+
+单线程 WASM 文件放入运行 ZIP，并在普通 `assets` 中声明，例如 `"assets": ["wasm/answer.wasm"]`。不需要新增 WASM 权限，仍遵守包内单文件 8 MiB 等限制：
+
+```ts
+const { module, instance } = await sdk.wasm.instantiate("wasm/answer.wasm");
+const answer = instance.exports.answer;
+if (typeof answer === "function") console.log(answer());
+```
+
+`instantiate(path, imports?)` 接收原生 WebAssembly imports，返回原生 `module` 和 `instance`。只接受本地已声明的 `.wasm` 路径，不接受 URL、未声明文件或 `remote_assets`。此方法的路径限制不代表浏览器原生 WebAssembly 的所有字节来源都受它约束。
+
+读取前后及编译完成后会检查应用生命周期，退出后以 `APP_UNLOADED` 拒绝，避免随后执行模块 start。不可用的浏览器 API 返回 `API_UNSUPPORTED`，非法路径返回 `ASSET_NOT_FOUND`；文件读取错误与原生 `CompileError`、`LinkError`、`RuntimeError` 原样传播。`CompileError` 也可能来自浏览器策略，不能一概视为文件语法错误。
+
+JS `eval`/`new Function`、Worker、SharedArrayBuffer 和多线程 WASM 仍不开放。JSPI、WASM GC 依赖浏览器原生特性检测，SDK 不提供兼容层或统一支持保证。
+
 ## CDN 素材
 
 通过 manifest 的 `remote_assets` 固定素材 URL、SHA-256、字节数与 MIME，并申请 `assets.remote`。虚拟路径不能与包内文件重名，不放入 `assets` 或 ZIP；`media.path` 可以指向远程素材，但 MIME 必须匹配。完整声明和构建步骤见 [开发者 CDN 素材](../docs/developer-guide.md#开发者-cdn-素材)。
@@ -92,7 +130,9 @@ document.body.append(logo);
 ```ts
 if (sdk.permissions.has("assets.remote")) {
   const bytes = await sdk.assets.readBytes("images/atlas.webp");
-  const atlasUrl = URL.createObjectURL(new Blob([bytes], { type: "image/webp" }));
+  const atlasUrl = URL.createObjectURL(
+    new Blob([bytes], { type: "image/webp" })
+  );
   // 将 atlasUrl 设置为图片 src；不用时调用 URL.revokeObjectURL(atlasUrl)。
   if (sdk.permissions.has("audio.play")) {
     await sdk.audio.play("music", { volume: 0.5, loop: true });

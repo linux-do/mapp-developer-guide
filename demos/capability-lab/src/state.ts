@@ -5,6 +5,8 @@ export type ResultState =
   | "pending"
   | "success"
   | "denied"
+  | "unsupported"
+  | "restricted"
   | "cancelled"
   | "timeout"
   | "unloaded"
@@ -86,12 +88,20 @@ export const OPERATION_IDS = Object.freeze([
   "socketError",
   "socketEnded",
   "layoutForm",
+  "wasm",
+  "pointerCapture",
+  "pointerAudio",
+  "pointerLock",
+  "webAudioPlay",
+  "webAudioStop",
 ]);
 const allowedIds = new Set(OPERATION_IDS);
 const allowedStates = new Set([
   "pending",
   "success",
   "denied",
+  "unsupported",
+  "restricted",
   "cancelled",
   "timeout",
   "unloaded",
@@ -104,6 +114,16 @@ const allowedStates = new Set([
 ]);
 
 export function safeCode(error: unknown): string {
+  const name = (error as { name?: unknown } | null)?.name;
+  if (name === "CompileError") {
+    return "WASM_COMPILE_ERROR";
+  }
+  if (name === "LinkError") {
+    return "WASM_LINK_ERROR";
+  }
+  if (name === "RuntimeError") {
+    return "WASM_RUNTIME_ERROR";
+  }
   return typeof (error as { code?: unknown } | null)?.code === "string" &&
     /^[A-Z][A-Z0-9_]{0,47}$/.test((error as { code: string }).code)
     ? (error as { code: string }).code
@@ -112,6 +132,12 @@ export function safeCode(error: unknown): string {
 
 export function resultState(error: unknown): ResultState {
   const code = safeCode(error);
+  if (code === "API_UNSUPPORTED") {
+    return "unsupported";
+  }
+  if (code === "PLATFORM_RESTRICTED") {
+    return "restricted";
+  }
   if (["PERMISSION_DENIED", "ACCESS_DENIED", "ACCESS_REVOKED"].includes(code)) {
     return "denied";
   }

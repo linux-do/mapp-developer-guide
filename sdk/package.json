@@ -1,6 +1,6 @@
 {
   "name": "@discourse-mini-app/sdk",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "types": "./index.d.ts",
   "exports": {
@@ -20,6 +20,7 @@
   "files": [
     "index.mjs",
     "index.d.ts",
+    "types.d.ts",
     "pack.mjs",
     "pack.d.ts",
     "server.mjs",

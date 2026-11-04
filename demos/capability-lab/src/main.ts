@@ -9,9 +9,21 @@ import type {
 } from "@discourse-mini-app/sdk";
 import { getSDK } from "@discourse-mini-app/sdk";
 import manifest from "../manifest.json";
+import type { PointerSnapshot } from "./pointer.ts";
+import { createPointerSample } from "./pointer.ts";
+import type { PointerLockSnapshot } from "./pointer-lock.ts";
+import { createPointerLockSample } from "./pointer-lock.ts";
 import type { RunnerState, RunOptions } from "./state.ts";
-import { createRunner, parseJsonInput, safeCode, testKey } from "./state.ts";
+import {
+  createRunner,
+  parseJsonInput,
+  resultState,
+  safeCode,
+  testKey,
+} from "./state.ts";
 import messages from "./strings.json";
+import type { ToneSnapshot } from "./web-audio.ts";
+import { createToneSample } from "./web-audio.ts";
 
 type TemplateElements = {
   lab: HTMLElement;
@@ -45,6 +57,18 @@ type TemplateElements = {
   "native-output": HTMLOutputElement;
   "media-loop": HTMLInputElement;
   "media-output": HTMLOutputElement;
+  "wasm-output": HTMLElement;
+  "pointer-pad": HTMLButtonElement;
+  "pointer-sound": HTMLInputElement;
+  "pointer-output": HTMLOutputElement;
+  "pointer-audio-output": HTMLOutputElement;
+  "pointer-lock-request": HTMLButtonElement;
+  "pointer-lock-exit": HTMLButtonElement;
+  "pointer-lock-canvas": HTMLCanvasElement;
+  "pointer-lock-output": HTMLOutputElement;
+  "web-audio-play": HTMLButtonElement;
+  "web-audio-stop": HTMLButtonElement;
+  "web-audio-output": HTMLOutputElement;
   network: HTMLElement;
   "network-title": HTMLElement;
   "network-config": HTMLElement;
@@ -92,6 +116,17 @@ let videoHandle: string | null | undefined;
 let unsubscribeTheme: (() => void) | undefined;
 let stopped = false;
 let latestState: RunnerState | undefined;
+let pointerSnapshot: PointerSnapshot = { active: false, status: "pointerIdle" };
+let toneSnapshot: ToneSnapshot | undefined;
+let toneFailure: string | undefined;
+let lockSnapshot: PointerLockSnapshot = {
+  phase: "idle",
+  movementX: 0,
+  movementY: 0,
+  totalX: 0,
+  totalY: 0,
+};
+let lockFailure: string | undefined;
 const sampleCookieName = testKey("sample");
 const operationOutputs: Record<string, string> = Object.fromEntries([
   ...["user", "userLookup", "launch", "theme", "assets"].map((name) => [
@@ -116,6 +151,8 @@ const operationOutputs: Record<string, string> = Object.fromEntries([
     "media-output",
   ]),
   ["http", "http-output"],
+  ["wasm", "wasm-output"],
+  ["pointerAudio", "pointer-audio-output"],
   ...["socketConnect", "socketSend", "socketClose"].map((name) => [
     name,
     "socket-output",
@@ -202,6 +239,88 @@ function renderState(state: RunnerState) {
   element("result-list").replaceChildren(...rows);
   element("empty-results").hidden = rows.length > 0;
   renderPermissions();
+  if (state.mode !== "connected") {
+    output("wasm-output", t("wasmPreview"));
+  }
+  renderTone();
+  renderPointerLock();
+}
+
+function renderPointerLock() {
+  const permitted =
+    runner.mode === "connected" && sdk!.permissions.has("pointer.lock");
+  element("pointer-lock-request").disabled =
+    !permitted ||
+    ["requesting", "locked", "exiting"].includes(lockSnapshot.phase);
+  element("pointer-lock-exit").disabled = !["requesting", "locked"].includes(
+    lockSnapshot.phase
+  );
+  if (runner.mode !== "connected") {
+    output("pointer-lock-output", t("pointerLockPreview"));
+  } else if (!permitted) {
+    output("pointer-lock-output", t("pointerLockPermission"));
+  } else {
+    const failure = lockFailure
+      ? `\n${t("operationError", {
+          state: t(resultState({ code: lockFailure })),
+          code: lockFailure,
+        })}`
+      : "";
+    output(
+      "pointer-lock-output",
+      t("pointerLockState", {
+        state: t(`pointerLock_${lockSnapshot.phase}`),
+        x: lockSnapshot.movementX,
+        y: lockSnapshot.movementY,
+        totalX: lockSnapshot.totalX,
+        totalY: lockSnapshot.totalY,
+      }) + failure
+    );
+  }
+  const canvas = element("pointer-lock-canvas");
+  const context = canvas.getContext("2d");
+  if (context) {
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = getComputedStyle(lab).color;
+    const x =
+      (((canvas.width / 2 + lockSnapshot.totalX) % canvas.width) +
+        canvas.width) %
+      canvas.width;
+    const y =
+      (((canvas.height / 2 + lockSnapshot.totalY) % canvas.height) +
+        canvas.height) %
+      canvas.height;
+    context.fillRect(x - 6, y - 1, 12, 2);
+    context.fillRect(x - 1, y - 6, 2, 12);
+  }
+}
+
+function renderTone() {
+  const permitted =
+    runner.mode === "connected" && sdk!.permissions.has("audio.webAudio");
+  element("web-audio-play").disabled =
+    !permitted || Boolean(toneSnapshot?.active);
+  element("web-audio-stop").disabled = !toneSnapshot?.active;
+  if (runner.mode !== "connected") {
+    output("web-audio-output", t("webAudioPreview"));
+  } else if (!permitted) {
+    output("web-audio-output", t("webAudioPermission"));
+  } else if (toneFailure) {
+    output(
+      "web-audio-output",
+      t("operationError", {
+        state: t(resultState({ code: toneFailure })),
+        code: toneFailure,
+      })
+    );
+  } else if (toneSnapshot) {
+    output(
+      "web-audio-output",
+      t("webAudioState", { state: toneSnapshot.state })
+    );
+  } else {
+    output("web-audio-output", t("notTested"));
+  }
 }
 
 function localize() {
@@ -225,6 +344,7 @@ function localize() {
     renderState(latestState);
   }
   dimensions();
+  output("pointer-output", t(pointerSnapshot.status));
 }
 
 function applyTheme(theme: MiniAppTheme) {
@@ -273,7 +393,13 @@ async function run<T>(
       output(target, t("completed"));
     }
   } else if (result.code && target && !stopped) {
-    output(target, t("operationError", { code: result.code }));
+    output(
+      target,
+      t("operationError", {
+        state: t(resultState({ code: result.code })),
+        code: result.code,
+      })
+    );
   }
 }
 
@@ -351,6 +477,38 @@ function attachSocket(connection: MiniAppSocket) {
 }
 
 const actions: Record<string, () => Promise<void>> = {
+  wasm: () =>
+    run(
+      "wasm",
+      async () => {
+        if (typeof sdk!.wasm?.instantiate !== "function") {
+          throw error("API_UNSUPPORTED");
+        }
+        const { module, instance } =
+          await sdk!.wasm.instantiate("wasm/answer.wasm");
+        const answer = instance.exports.answer;
+        if (typeof answer !== "function") {
+          throw error("WASM_EXPORT_MISSING");
+        }
+        const value = answer();
+        if (value !== 42) {
+          throw error("WASM_RESULT_MISMATCH");
+        }
+        return {
+          module:
+            module instanceof WebAssembly.Module
+              ? "WebAssembly.Module"
+              : "unexpected",
+          instance:
+            instance instanceof WebAssembly.Instance
+              ? "WebAssembly.Instance"
+              : "unexpected",
+          exports: WebAssembly.Module.exports(module),
+          "answer()": value,
+        };
+      },
+      (value) => dataOutput("wasm-output", value)
+    ),
   permissions: () =>
     run("permissions", () => sdk!.permissions.list(), renderPermissions),
   user: () =>
@@ -634,6 +792,215 @@ const actions: Record<string, () => Promise<void>> = {
     ),
 };
 
+const pointerPad = element("pointer-pad");
+const lockCanvas = element("pointer-lock-canvas");
+const pointerLock = createPointerLockSample({
+  request() {
+    if (typeof lockCanvas.requestPointerLock !== "function") {
+      throw error("API_UNSUPPORTED");
+    }
+    if (document.pointerLockElement) {
+      throw error("POINTER_LOCK_BUSY");
+    }
+    return lockCanvas.requestPointerLock();
+  },
+  exit: () => document.exitPointerLock(),
+  isLocked: () => document.pointerLockElement === lockCanvas,
+  onChange(snapshot) {
+    if (!stopped) {
+      lockSnapshot = snapshot;
+      renderPointerLock();
+    }
+  },
+  onError(failure) {
+    if (!stopped) {
+      lockFailure = safeCode(failure);
+      runner.record("pointerLock", resultState(failure), { code: lockFailure });
+      renderPointerLock();
+    }
+  },
+});
+element("pointer-lock-request").addEventListener("click", () => {
+  if (
+    runner.mode !== "connected" ||
+    !sdk!.permissions.has("pointer.lock") ||
+    stopped
+  ) {
+    return;
+  }
+  lockFailure = undefined;
+  pointerLock.request();
+});
+element("pointer-lock-exit").addEventListener("click", () =>
+  pointerLock.release()
+);
+document.addEventListener("pointerlockchange", () => pointerLock.changed());
+document.addEventListener("pointerlockerror", () =>
+  pointerLock.failed(error("POINTER_LOCK_FAILED"))
+);
+document.addEventListener("mousemove", (event) =>
+  pointerLock.move(event.movementX, event.movementY)
+);
+window.addEventListener("blur", () => pointerLock.release());
+const toneSample = createToneSample({
+  createContext() {
+    if (typeof AudioContext !== "function") {
+      throw error("API_UNSUPPORTED");
+    }
+    return new AudioContext();
+  },
+  onChange(snapshot) {
+    if (!stopped) {
+      toneSnapshot = snapshot;
+      renderTone();
+    }
+  },
+  onError(failure) {
+    if (!stopped) {
+      toneFailure = safeCode(failure);
+      runner.record("webAudioPlay", resultState(failure), {
+        code: toneFailure,
+      });
+      renderTone();
+    }
+  },
+});
+element("web-audio-play").addEventListener("click", () => {
+  if (
+    runner.mode !== "connected" ||
+    !sdk!.permissions.has("audio.webAudio") ||
+    stopped
+  ) {
+    renderTone();
+    return;
+  }
+  toneFailure = undefined;
+  try {
+    toneSample.play();
+  } catch (failure) {
+    toneFailure = safeCode(failure);
+    runner.record("webAudioPlay", resultState(failure), { code: toneFailure });
+    renderTone();
+  }
+});
+element("web-audio-stop").addEventListener("click", () => toneSample.stop());
+const pointerSample = createPointerSample({
+  capture(pointerId) {
+    if (pointerId === -1) {
+      return;
+    }
+    if (typeof pointerPad.setPointerCapture !== "function") {
+      throw error("API_UNSUPPORTED");
+    }
+    pointerPad.setPointerCapture(pointerId);
+    runner.record("pointerCapture", "success");
+  },
+  release(pointerId) {
+    if (pointerId !== -1 && pointerPad.hasPointerCapture(pointerId)) {
+      pointerPad.releasePointerCapture(pointerId);
+    }
+  },
+  async play() {
+    if (!element("pointer-sound").checked) {
+      return null;
+    }
+    const result = await runner.run(
+      "pointerAudio",
+      () => sdk!.audio.play("chime", { volume: 0.2, loop: true }),
+      {
+        onDiscard: (value) => sdk!.audio.stop(value.handle),
+      }
+    );
+    if (!stopped) {
+      output(
+        "pointer-audio-output",
+        t(
+          result.accepted
+            ? "mediaStarted"
+            : result.code
+              ? resultState({ code: result.code })
+              : "wasmPreview"
+        )
+      );
+    }
+    return result.accepted ? result.value : null;
+  },
+  stop: (handle) => sdk!.audio.stop(handle),
+  onChange(snapshot) {
+    pointerSnapshot = snapshot;
+    pointerPad.classList.toggle("is-held", snapshot.active);
+    pointerPad.setAttribute("aria-pressed", String(snapshot.active));
+    output("pointer-output", t(snapshot.status));
+  },
+  onError(failure) {
+    if (stopped) {
+      return;
+    }
+    runner.record("pointerCapture", resultState(failure), {
+      code: safeCode(failure),
+    });
+    output(
+      "pointer-audio-output",
+      t("operationError", {
+        state: t(resultState(failure)),
+        code: safeCode(failure),
+      })
+    );
+  },
+});
+pointerPad.addEventListener("pointerdown", (event) => {
+  if (event.button !== 0 || stopped) {
+    return;
+  }
+  event.preventDefault();
+  pointerPad.focus();
+  pointerSample.begin(event.pointerId);
+});
+pointerPad.addEventListener("pointermove", (event) => {
+  const rect = pointerPad.getBoundingClientRect();
+  pointerSample.move(
+    event.pointerId,
+    event.clientX < rect.left ||
+      event.clientX > rect.right ||
+      event.clientY < rect.top ||
+      event.clientY > rect.bottom
+  );
+});
+pointerPad.addEventListener("keydown", (event) => {
+  if ([" ", "Enter"].includes(event.key)) {
+    event.preventDefault();
+    if (!event.repeat && !stopped) {
+      pointerSample.begin(-1);
+    }
+  }
+});
+pointerPad.addEventListener("keyup", (event) => {
+  if ([" ", "Enter"].includes(event.key)) {
+    event.preventDefault();
+    pointerSample.finish("pointerReleased", -1);
+  }
+});
+pointerPad.addEventListener("pointerup", (event) =>
+  pointerSample.finish("pointerReleased", event.pointerId)
+);
+pointerPad.addEventListener("pointercancel", (event) =>
+  pointerSample.finish("pointerCancelled", event.pointerId)
+);
+pointerPad.addEventListener("lostpointercapture", (event) =>
+  pointerSample.finish("pointerCaptureLost", event.pointerId)
+);
+window.addEventListener("blur", () => pointerSample.finish("pointerBlurred"));
+pointerPad.addEventListener("blur", () =>
+  pointerSample.finish("pointerBlurred")
+);
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    pointerLock.release();
+    pointerSample.finish("pointerHidden");
+    toneSample.stop();
+  }
+});
+
 for (const button of document.querySelectorAll<HTMLButtonElement>(
   "[data-action]"
 )) {
@@ -696,6 +1063,7 @@ element("sample-form").addEventListener("submit", (event) => {
   runner.record("layoutForm", "success");
 });
 element("stop-waiting").addEventListener("click", () => {
+  toneSample.stop();
   for (const operation of latestState!.pendingOperations || []) {
     if (operationOutputs[operation]) {
       output(operationOutputs[operation], t("stoppedWaiting"));
@@ -737,6 +1105,9 @@ async function initialize() {
 }
 void initialize();
 window.addEventListener("pagehide", () => {
+  pointerLock.dispose();
+  pointerSample.finish("pointerHidden");
+  toneSample.stop();
   stopped = true;
   runner.dispose();
   observer.disconnect();

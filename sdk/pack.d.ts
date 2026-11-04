@@ -1,5 +1,5 @@
 // Generated from sdk/src by tools/build-sdk.ts.
-import type { HttpMethod, Permission, RemoteAssetDeclaration } from "./index.js";
+import type { HttpMethod, Permission, RemoteAssetDeclaration } from "./types.js";
 export interface EndpointDeclaration {
     url: string;
     query?: string[];

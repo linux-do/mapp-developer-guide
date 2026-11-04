@@ -47,6 +47,14 @@ describe("private session results", () => {
     expect(resultState({ code: "USER_CANCELLED" })).toBe("cancelled");
     expect(resultState({ code: "TIMEOUT" })).toBe("timeout");
     expect(resultState({ code: "APP_UNLOADED" })).toBe("unloaded");
+    expect(resultState({ code: "API_UNSUPPORTED" })).toBe("unsupported");
+    expect(resultState({ code: "PLATFORM_RESTRICTED" })).toBe("restricted");
+    expect(
+      safeCode(new WebAssembly.CompileError("CSP or module failure"))
+    ).toBe("WASM_COMPILE_ERROR");
+    expect(resultState(new WebAssembly.CompileError())).toBe("failed");
+    expect(safeCode(new WebAssembly.LinkError())).toBe("WASM_LINK_ERROR");
+    expect(safeCode(new WebAssembly.RuntimeError())).toBe("WASM_RUNTIME_ERROR");
     expect(safeCode(new Error("sensitive implementation detail"))).toBe(
       "REQUEST_FAILED"
     );
@@ -218,19 +226,39 @@ describe("controlled fixture inputs", () => {
     );
   });
 
-  test("packages only small local audio/video fixtures with valid container headers", () => {
+  test("packages only small local media and WASM fixtures with valid container headers", () => {
     const files = mediaAssets();
     const wav = files["media/chime.wav"];
     const mp4 = files["media/pattern.mp4"];
     expect(Object.keys(files).sort()).toEqual([
       "media/chime.wav",
       "media/pattern.mp4",
+      "wasm/answer.wasm",
     ]);
     expect(wav.toString("ascii", 0, 4)).toBe("RIFF");
     expect(wav.readUInt32LE(4)).toBe(wav.length - 8);
     expect(wav.toString("ascii", 8, 16)).toBe("WAVEfmt ");
     expect(mp4.toString("ascii", 4, 8)).toBe("ftyp");
     expect(wav.length + mp4.length).toBeLessThan(20000);
+  });
+
+  test("generates a deterministic declared WASM module with a real answer export", async () => {
+    const bytes = mediaAssets()["wasm/answer.wasm"];
+    const manifest = await Bun.file(
+      new URL("../manifest.json", import.meta.url)
+    ).json();
+    expect(manifest.assets).toContain("wasm/answer.wasm");
+    expect(bytes).toEqual(mediaAssets()["wasm/answer.wasm"]);
+    expect(bytes.byteLength).toBe(39);
+    const { module, instance } = await WebAssembly.instantiate(bytes);
+    expect(module).toBeInstanceOf(WebAssembly.Module);
+    expect(instance).toBeInstanceOf(WebAssembly.Instance);
+    const answer = instance.exports.answer;
+    expect(typeof answer).toBe("function");
+    if (typeof answer !== "function") {
+      throw new Error("Missing answer export");
+    }
+    expect(answer()).toBe(42);
   });
 
   test("all languages cover the same controls and outcomes", () => {

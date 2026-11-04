@@ -19,10 +19,13 @@
     "clipboard.write",
     "fullscreen",
     "audio.play",
+    "audio.webAudio",
+    "pointer.lock",
     "video.play",
     "network.request",
     "network.websocket"
   ],
+  "assets": ["wasm/answer.wasm"],
   "media": {
     "chime": {
       "path": "media/chime.wav",

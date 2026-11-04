@@ -32,6 +32,7 @@ app.css
 strings.json
 data/…        可选，列入 assets
 images/…      可选，列入 assets
+wasm/…        可选，列入 assets
 media/…       可选，列入 media
 ```
 
@@ -73,6 +74,18 @@ media/…       可选，列入 media
 | manifest JSON     | 64 KiB，最多 32 层                  |
 
 打包器还会检查首屏内容大小；较大的数据文件放到 `assets`，用 SDK 文件 API 读取。
+
+## 包内 WebAssembly
+
+单线程 WASM 使用普通包内资源：将 `public/wasm/answer.wasm` 打入 ZIP，并把 `wasm/answer.wasm` 加入 manifest 的 `assets`。不需要新增 WASM 权限，文件仍遵守 8 MiB 单文件及整个 ZIP 的限额。
+
+```ts
+const { module, instance } = await sdk.wasm.instantiate("wasm/answer.wasm");
+```
+
+第二个可选参数是原生 WebAssembly imports，返回值中的 `module`、`instance` 也是原生对象。方法只接受已声明的包内 `.wasm`，拒绝任意 URL、未声明文件和远程素材；该限制只适用于此方法，不是对原生 WebAssembly 所有字节来源的强制约束。
+
+读取或编译期间退出应用会以 `APP_UNLOADED` 拒绝，并阻止随后实例化及执行 start。处理 `ASSET_NOT_FOUND`、`API_UNSUPPORTED`、文件读取失败以及原生 `CompileError`、`LinkError`、`RuntimeError`；编译错误也可能来自浏览器策略。JS `eval`/`new Function`、Worker、SharedArrayBuffer 和多线程 WASM 仍不开放；JSPI 与 WASM GC 仅按当前浏览器的原生检测结果使用。
 
 ## 开发者 CDN 素材
 
@@ -132,24 +145,24 @@ const atlas: RemoteAssetDeclaration = {
 
 这个通路适合小游戏素材和短视频，不提供边下载边播放或 HLS/DASH。先渲染加载界面并调用 `lifecycle.ready()`，再按关卡按需读取素材，避免等待整套资源后才显示首屏。建议同时请求不超过两个大文件；排队也计入远程读取的 45 秒 SDK 调用期限。
 
-| 远程素材项目 | 限额 |
-| --- | --- |
-| 清单条数 | 128 |
-| 单文件 / 全清单声明大小 | 32 MiB / 256 MiB |
-| 不同文件并发下载 | 2 |
-| 单次下载截止 | 30 秒 |
-| 当前实例已验证素材缓存 | 最多 64 MiB |
-| 支持 MIME | `image/png`、`image/jpeg`、`image/gif`、`image/webp`、`image/avif`、`audio/wav`、`audio/mpeg`、`audio/ogg`、`video/mp4`、`video/webm`、`application/json`、`application/octet-stream` |
+| 远程素材项目            | 限额                                                                                                                                                                                  |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 清单条数                | 128                                                                                                                                                                                   |
+| 单文件 / 全清单声明大小 | 32 MiB / 256 MiB                                                                                                                                                                      |
+| 不同文件并发下载        | 2                                                                                                                                                                                     |
+| 单次下载截止            | 30 秒                                                                                                                                                                                 |
+| 当前实例已验证素材缓存  | 最多 64 MiB                                                                                                                                                                           |
+| 支持 MIME               | `image/png`、`image/jpeg`、`image/gif`、`image/webp`、`image/avif`、`audio/wav`、`audio/mpeg`、`audio/ogg`、`video/mp4`、`video/webm`、`application/json`、`application/octet-stream` |
 
 清单元数据仍计入 manifest 的 64 KiB 上限。远程素材下载后先验证完整大小、MIME 和 SHA-256，再提供给应用；命中已验证缓存时复用结果，不在游戏每帧重复计算哈希。缓存淘汰、退出后重新进入或重试下载时会重新验证。请分批加载关卡与大型素材，释放不再使用的 Blob URL；包内文件继续遵守原来的 8 MiB 单文件限制。
 
 ## 音频与长按操作
 
-已声明音频素材并获批 `audio.play` 的应用在代码执行前显示“开启声音”和“静音进入”，只决定初始声音状态。运行中可通过页面左侧信息按钮后的喇叭随时切换；开关只影响本次运行，关闭或刷新后重新选择。`audio.play/stop` 不弹框，播放和停止由应用控制；平台只提供总声音开关，不显示音频列表或暂停、停止按钮。视频保留原有播放器界面，视频播放、剪贴板和全屏仍逐次确认。
+获批 `audio.webAudio`，或同时获批 `audio.play` 并声明了音频素材的应用，在代码执行前显示“开启声音”和“静音进入”，只决定初始声音状态。运行中可通过顶部喇叭随时切换；开关只影响本次运行，关闭或刷新后重新选择。`audio.play/stop` 不弹框，播放和停止由应用控制；平台只提供总声音开关，不显示音频列表或暂停、停止按钮。视频保留原有播放器界面，视频播放、剪贴板和全屏仍逐次确认。
 
 静音只关闭输出，既有和新音频仍正常播放、保留进度及独立的 `{ handle }`，可照常停止，也可下载声明的远程音频。取消静音后会听到当前背景音乐或循环音频，不补播已经结束的短音效。
 
-现有应用无需修改音频调用代码，也无需为此重新打包或提审。平台更新后，重新打开应用即可使用新的声音选择流程。
+仅使用 `sdk.audio.play/stop` 的现有应用无需增加 `audio.webAudio`，也无需为声音开关修改调用代码或重新打包。使用原生在线 `AudioContext` 的应用则必须新增 `audio.webAudio` 权限并重新提审，见下节。
 
 每个实例最多同时播放 4 路音频、2 路视频，满额拒绝新播放，不排队补播。`audio.play` 最多 20 次/秒；`audio.stop` 不占播放限额或通用的 60 次/分钟限额，但仍受合计 16 个待响应请求、120 条消息/秒的限制。处理播放失败，避免密集重试。
 
@@ -165,10 +178,13 @@ function beginCharge() {
   if (charge) return;
   const press: { handle?: string } = {};
   charge = press;
-  void sdk.audio.play("charge", { loop: true }).then(({ handle }) => {
-    if (charge === press) press.handle = handle;
-    else stopSound(handle);
-  }).catch(() => {});
+  void sdk.audio
+    .play("charge", { loop: true })
+    .then(({ handle }) => {
+      if (charge === press) press.handle = handle;
+      else stopSound(handle);
+    })
+    .catch(() => {});
 }
 
 function endCharge() {
@@ -178,7 +194,29 @@ function endCharge() {
 }
 ```
 
-即使松手早于播放 Promise 返回，旧操作的句柄返回后也会立即停止；音效失败不会阻塞按下或松手逻辑。实际游戏还应管理指针捕获，只让对应指针结束本次操作。
+即使松手早于播放 Promise 返回，旧操作的句柄返回后也会立即停止；音效失败不会阻塞按下或松手逻辑。实际游戏还应管理 `setPointerCapture()` 与释放、取消，只让对应指针结束本次操作；这种拖动或长按捕获不需要 `pointer.lock`。
+
+## 鼠标锁定
+
+第一人称视角等需要隐藏光标、持续读取相对位移的应用，应在 manifest 的 `permissions` 中加入 `pointer.lock`，获批后调用原生 `Element.requestPointerLock()`。没有 `sdk.pointerLock` 包装或平台额外确认框；`mousemove` 的 `movementX/movementY` 留在应用内处理，不经过 RPC。
+
+锁定请求必须来自应用内的用户点击，并在该处理函数的第一个 `await` 前调用。兼容返回 Promise 或 `void` 的浏览器，处理同步异常和 Promise 拒绝；通过 `pointerlockchange`、`pointerlockerror` 以及 `document.pointerLockElement === target` 判断结果，不能因为调用返回就显示“已锁定”。只在目标元素确实持有锁时应用相对位移。
+
+用户可按 Esc，应用也可调用 `document.exitPointerLock()`。失焦、页面隐藏或应用关闭时会自动释放；退出后更新界面，等待新的用户点击，不自动重锁。优先请求不带选项的标准锁；`unadjustedMovement` 按浏览器支持作为可选增强，失败时让用户点击标准锁重试。
+
+全屏继续通过 `sdk.fullscreen.request/exit` 使用。组合这两项能力时，可以先进入全屏，再让用户在应用中点击锁定；不要 `await` SDK 全屏后立即调用原生锁定，因为用户激活不会随异步 SDK 响应传回。
+
+已使用原生锁定的应用新增权限后重新打包、提审即可，原生调用不需改名；没有使用锁定则无需申请。普通拖动、蓄力和长按继续使用 pointer capture。
+
+## 原生 Web Audio
+
+合成音效或混音使用浏览器原生 `AudioContext`，需在 manifest 的 `permissions` 中加入 `audio.webAudio` 并获得批准。调用方式不变，无需改用新的 SDK 音频方法，也无需为了合成音频声明 `media` 文件。初始声音选择与顶部喇叭统一控制输出；静音不暂停 context 的时钟、调度或音频进度。
+
+每次运行最多有 4 个未关闭的在线 context；用完后等待 `context.close()` 完成即可释放名额，退出应用也会关闭 context。该配额独立于 `sdk.audio.play` 的 4 路文件播放。
+
+先渲染界面并调用 `sdk.lifecycle.ready()`，再在应用自己的点击处理函数中调用 `context.resume()`。浏览器仍可能要求该用户手势；不要先等待音频启动再进行首次渲染，并处理拒绝或一直未恢复的状态。
+
+`OfflineAudioContext` 允许离线处理，不需要 `audio.webAudio` 且不会直接输出声音。不支持 `createMediaStreamDestination()` 和 AudioWorklet 脚本加载。
 
 ## 开发者服务的 JWT 公钥
 
