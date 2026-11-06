@@ -101,6 +101,7 @@ SDK 不会自动下载或刷新 JWKS。生产服务应在进程内缓存已信�
 
 - 验证失败返回 401、拒绝 WS upgrade；业务权限不足返回 403。身份使用返回结果的 `(iss, sub)`，正文中的 `user_id` 不可信。
 - JWT 可复用 15 分钟，不按一次性凭据消费；仍需验证每次业务参数、资源归属和幂等。sandbox 要显式允许并与正式数据分开。
+- JWT 不证明客户端未被修改或操作由真人完成。成绩、奖励、余额与冷却由开发者服务器校验，不能只信任客户端上报。
 - 忽略 Cookie 鉴权，JWT 缺失/无效不能回退登录态。HTTP 需允许论坛 origin 的 CORS、OPTIONS、Authorization、Content-Type；错误响应也要有 CORS，OPTIONS 不要求 JWT。
 - WS 服务逐条验证业务消息，连接最多存活 `min(300 秒, token 剩余有效期)`，到期关闭并重新认证。
 - 隐藏日志中的 Authorization 和 `mini_app_token`，不向微应用回显 token。旧 JWT 可用到到期，业务封禁仍由服务端处理。

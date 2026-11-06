@@ -68,7 +68,7 @@ const unsubscribe = sdk.theme.onChange(({ locale }) => updateLanguage(locale));
 
 ## 音频播放
 
-获批 `audio.webAudio`，或同时获批 `audio.play` 并声明了音频素材的应用，在代码执行前让用户选择初始声音状态。运行中可通过顶部喇叭随时开启声音或静音；开关只影响本次运行，关闭或刷新后重选。`audio.play/stop` 不弹框，音频由应用控制，平台只提供总声音开关，不显示音频列表或暂停、停止按钮；视频保留原有播放器界面。
+获批 `audio.webAudio`，或同时获批 `audio.play` 并声明了音频素材的应用，在代码执行前让用户选择初始声音状态。运行中可通过声音开关（窄屏在“更多”菜单中）随时开启声音或静音；开关只影响本次运行，关闭或刷新后重选。`audio.play/stop` 不弹框，音频由应用控制，平台只提供总声音开关，不显示音频列表或暂停、停止按钮；视频保留原有播放器界面。
 
 静音只关闭输出，既有和新音频仍正常播放、保留进度及独立的 `{ handle }`，也可下载声明的远程音频。`stop(handle)` 照常停止对应音频；取消静音会恢复当前背景音乐或循环音频的声音，不补播已结束的短音效。
 
@@ -78,7 +78,7 @@ const unsubscribe = sdk.theme.onChange(({ locale }) => updateLanguage(locale));
 
 ## 原生 Web Audio
 
-获批 `audio.webAudio` 后可使用 `new AudioContext()`。顶部喇叭同步控制其总输出；静音不暂停音频时钟、节点调度或播放进度。每次运行最多保留 4 个未关闭的在线 context，成功 `close()` 后释放名额；退出应用会关闭这些 context。
+获批 `audio.webAudio` 后可使用 `new AudioContext()`。声音开关同步控制其总输出；静音不暂停音频时钟、节点调度或播放进度。每次运行最多保留 4 个未关闭的在线 context，成功 `close()` 后释放名额；退出应用会关闭这些 context。
 
 浏览器的用户手势要求仍然存在：在应用自己的点击处理函数中调用 `context.resume()`，并处理拒绝。先完成首次渲染并调用 `sdk.lifecycle.ready()`，不要等待音频启动或 `resume()` 完成后才显示界面。
 
