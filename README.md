@@ -6,7 +6,7 @@
 2. 按 [示例说明](demos/README.md) 预览、构建项目，将应用页面分配的 ID 写入 manifest。
 3. 上传原始 `app.zip`，完成 sandbox 检查后按 [提审说明](docs/submission-review.md) 发布。
 
-参考：[SDK API](sdk/README.md) · [HTTP/WS](docs/sdk-network.md) · [服务端鉴权](docs/server-auth.md)。
+参考：[SDK API](sdk/README.md) · [HTTP/WS](docs/sdk-network.md) · [网络恢复与上传](docs/network-recovery.md) · [服务端鉴权](docs/server-auth.md) · [浏览器操作与存档](docs/browser-capabilities.md) · [分包与 Worker](docs/execution.md) · [分片视频](docs/segmented-media.md) · [直播与多轨时间线](docs/media-timelines.md) · [设备访问](docs/device-access.md)。
 
 开发者资格由社区配置。上传原始 `app.zip`；不要把访问令牌或其他秘密放进包内。
 

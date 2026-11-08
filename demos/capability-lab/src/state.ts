@@ -195,10 +195,10 @@ export function createLedger({
   };
 }
 
-export function parseJsonInput(text: unknown, maxBytes = 4096): JsonValue {
+export function parseJsonInput(text: unknown, maxBytes?: number): JsonValue {
   if (
     typeof text !== "string" ||
-    new TextEncoder().encode(text).length > maxBytes
+    (maxBytes !== undefined && new TextEncoder().encode(text).length > maxBytes)
   ) {
     throw Object.assign(new Error("Input is too large"), {
       code: "MESSAGE_LIMIT",

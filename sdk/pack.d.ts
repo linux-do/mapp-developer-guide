@@ -1,11 +1,16 @@
 // Generated from sdk/src by tools/build-sdk.ts.
+import { type CodeDeclarations } from "./code-policy.js";
+import { type DevicePolicy } from "./device-policy.js";
 import type { HttpMethod, Permission, RemoteAssetDeclaration } from "./types.js";
+export { bundleModules, type ModuleBundleOptions } from "./module-bundle.js";
 export interface EndpointDeclaration {
     url: string;
     query?: string[];
     /** Reviewed constant headers; sensitive and transport headers are prohibited. */
     headers?: Record<string, string>;
     auth?: "none" | "platform";
+    /** Follow an actual redirect only to this reviewed GET/HEAD endpoint, using fresh authorization. */
+    redirectTo?: string;
 }
 export interface MiniAppManifest {
     format: 1;
@@ -17,12 +22,14 @@ export interface MiniAppManifest {
     permissions: readonly Permission[];
     name?: string;
     assets?: string[];
+    code?: CodeDeclarations;
+    devices?: DevicePolicy;
     /** Pinned CDN files; their bytes are omitted from the application ZIP. */
     remote_assets?: Record<string, RemoteAssetDeclaration>;
     media?: Record<string, {
         path: string;
         kind: "audio" | "video";
-        mime: "audio/wav" | "audio/mpeg" | "audio/ogg" | "video/mp4" | "video/webm";
+        mime: "audio/wav" | "audio/mpeg" | "audio/ogg" | "audio/aac" | "audio/flac" | "audio/mp4" | "audio/webm" | "video/mp4" | "video/webm" | "video/ogg";
     }>;
     endpoints?: Record<string, EndpointDeclaration & {
         method: HttpMethod;
@@ -44,4 +51,3 @@ export declare function pack({ manifest, files, outputDirectory, }: {
     zipSha256: string;
     size: number;
 }>;
-export {};

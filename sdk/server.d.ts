@@ -56,5 +56,8 @@ export declare class PlatformAuthError extends Error {
 }
 /** Verifies a reusable endpoint token; the developer still authorizes access to business resources. */
 export declare function verifyPlatformRequest(options: PlatformRequestOptions): Promise<PlatformIdentity>;
-/** Verifies the sole query token against the upgrade URL, without using cookies or headers. */
+/**
+ * Verifies the sole query token against the upgrade URL, without using cookies or headers.
+ * JWT expiry limits the handshake; an established connection need not close when it expires.
+ */
 export declare function verifyPlatformWebSocketRequest(options: PlatformWebSocketRequestOptions): Promise<PlatformIdentity>;

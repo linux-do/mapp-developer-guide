@@ -717,7 +717,7 @@ const actions: Record<string, () => Promise<void>> = {
         const method = element("http-method").value as HttpMethod;
         const options: HttpRequestOptions = {
           method,
-          query: parseJsonInput(element("http-query").value, 2048) as Record<
+          query: parseJsonInput(element("http-query").value) as Record<
             string,
             string
           >,
@@ -742,7 +742,7 @@ const actions: Record<string, () => Promise<void>> = {
           throw error("BUSY");
         }
         return sdk!.webSocket.connect(element("socket-endpoint").value, {
-          query: parseJsonInput(element("socket-query").value, 2048) as Record<
+          query: parseJsonInput(element("socket-query").value) as Record<
             string,
             string
           >,
@@ -786,9 +786,13 @@ const actions: Record<string, () => Promise<void>> = {
     run(
       "rejectBody",
       () =>
-        sdk!.http.request("unused", { method: "POST", json: "x".repeat(5000) }),
+        sdk!.http.request("unused", {
+          method: "POST",
+          json: { sample: true },
+          body: new Blob(["sample"]),
+        }),
       null,
-      { expectedCode: "MESSAGE_LIMIT" }
+      { expectedCode: "INVALID_ARGUMENTS" }
     ),
 };
 

@@ -19,7 +19,7 @@ MINI_APP_ID=平台应用ID MINI_APP_VERSION=1.0.1 bun run build
 - 原生 Web Audio：需 `audio.webAudio`，点击后创建并恢复 `AudioContext`，播放最多 5 秒的低音量合成音。显示真实上下文状态，顶部喇叭可静音；`running` 不代表已验证听觉输出。隐藏或离开页面时停止并关闭，浏览器的自动播放限制仍适用。
 - 指针捕获：按住并拖出按钮后松开，或用空格/Enter 操作；取消、失焦和页面隐藏时复位。可选循环提示音不阻塞指针状态，迟到的音频句柄会停止。
 - 鼠标锁定：需 `pointer.lock`，点击原生 `canvas.requestPointerLock()`，通过浏览器事件确认状态；原生 `mousemove` 显示 `movementX/Y`。按 Esc 或退出按钮释放，失焦、隐藏和卸载时清理；不会自动重试或把请求返回当作锁定成功。
-- 网络：HTTP 请求，以及 WS 连接、发送、接收和关闭。返回内容仅在结果区临时显示，不写入日志，可用“清除私人结果”清除。
+- 网络：HTTP 请求，以及 WS 连接、发送、接收和关闭。拒绝项验证同时传入 `json` 与 `body`、以及自定义请求头。JSON 输入不设本地大小上限；结果仅预览前 4096 字符，不写入日志，可用“清除私人结果”清除。
 
 状态区分未执行、成功、API 缺失、平台限制、权限拒绝、用户取消、超时和实际执行失败。WASM 编译失败也可能来自 CSP，不能仅凭 `CompileError` 判断原因。Worker 和 SharedArrayBuffer 只显示平台限制，不进行调用。日志最多 40 条，只保留操作名、状态、错误码和耗时。示例请求较多权限，实际应用应删去不用的权限。
 
@@ -27,7 +27,7 @@ Cookie 示例的读、写、删除共用合法名称 `capability-lab_sample`。
 
 ## 配置网络展示
 
-默认 manifest 的 `endpoints`、`websockets` 为空，未配置项目不发请求。改为自己控制的 HTTPS/WSS 443 服务，再重建：
+默认 manifest 的 `endpoints`、`websockets` 为空，未配置项目不发请求。改为自己控制的 HTTPS/WSS 服务，再重建：
 
 ```json
 {

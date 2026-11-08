@@ -87,9 +87,9 @@ describe("real SDK runner", () => {
     await runner.run(
       "rejectBody",
       () => {
-        throw { code: "MESSAGE_LIMIT" };
+        throw { code: "INVALID_ARGUMENTS" };
       },
-      { expectedCode: "MESSAGE_LIMIT" }
+      { expectedCode: "INVALID_ARGUMENTS" }
     );
     expect(ledger.list()[0].state).toBe("expectedRejection");
     await runner.run(
@@ -97,11 +97,11 @@ describe("real SDK runner", () => {
       () => {
         throw { code: "PERMISSION_DENIED" };
       },
-      { expectedCode: "MESSAGE_LIMIT" }
+      { expectedCode: "INVALID_ARGUMENTS" }
     );
     expect(ledger.list()[0].state).toBe("denied");
     await runner.run("rejectBody", () => null, {
-      expectedCode: "MESSAGE_LIMIT",
+      expectedCode: "INVALID_ARGUMENTS",
     });
     expect(ledger.list()[0].state).toBe("unexpectedSuccess");
   });
@@ -214,14 +214,16 @@ describe("real SDK runner", () => {
 });
 
 describe("controlled fixture inputs", () => {
-  test("namespaces keys and limits UTF-8 JSON input before parsing", () => {
+  test("namespaces keys and applies only explicitly requested UTF-8 input budgets", () => {
     expect(testKey("sample-1")).toBe("capability-lab_sample-1");
     for (const key of ["", "bad key", "a".repeat(41), "../value"]) {
       expect(() => testKey(key)).toThrow();
     }
     expect(parseJsonInput('{"count":2}')).toEqual({ count: 2 });
     expect(() => parseJsonInput("not json")).toThrow();
-    expect(() => parseJsonInput(`"${"汉".repeat(1400)}"`)).toThrow(
+    const largerInput = JSON.stringify("汉".repeat(1400));
+    expect(parseJsonInput(largerInput)).toBe("汉".repeat(1400));
+    expect(() => parseJsonInput(largerInput, 4096)).toThrow(
       "Input is too large"
     );
   });
