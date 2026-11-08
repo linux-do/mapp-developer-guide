@@ -1,6 +1,15 @@
 // Generated from sdk/src by tools/build-sdk.ts.
+/** A byte window within the complete, already verified source file. */
+export interface MediaByteRange {
+    offset: number;
+    length: number;
+}
+export interface MediaAppendWindow {
+    start: number;
+    end: number;
+}
 /** A pinned file, or media bytes served by a separately approved business endpoint. */
-export type MediaFragment = {
+export type MediaFragment = ({
     path: string;
 } | {
     endpoint: string;
@@ -8,12 +17,18 @@ export type MediaFragment = {
     sha256: string;
     size: number;
     mime: string;
+}) & {
+    range?: MediaByteRange;
 };
 export interface MediaTimelineSegment {
     id: string;
     start: number;
     duration: number;
     source: MediaFragment;
+    /** Initialization for this segment; omitted segments use their track's initialization. */
+    init?: MediaFragment;
+    /** Explicit period boundary; ordinary segment durations do not clip encoded packets. */
+    appendWindow?: MediaAppendWindow;
     /** Optional offset for discontinuous or rebased encoded timestamps. */
     timestampOffset?: number;
 }
@@ -31,10 +46,30 @@ export interface MediaProgramVariant {
     bandwidth: number;
     video: MediaProgramTrack;
 }
+export interface MediaTextSegment {
+    id: string;
+    start: number;
+    duration: number;
+    source: MediaFragment;
+    /** Maps the WebVTT media clock into the program's presentation timeline. */
+    timestampOffset?: number;
+}
+export type MediaProgramTextTrack = {
+    id: string;
+    mime: "text/vtt";
+    label?: string;
+    language?: string;
+} & ({
+    source: MediaFragment;
+    timestampOffset?: number;
+} | {
+    segments: MediaTextSegment[];
+});
 /** An explicit media timeline. Live indexes use the same shape with increasing sequence values. */
 export interface MediaProgram {
     variants: MediaProgramVariant[];
     audioTracks?: MediaProgramTrack[];
+    textTracks?: MediaProgramTextTrack[];
     duration?: number;
     live?: boolean;
     ended?: boolean;
@@ -57,6 +92,9 @@ export interface MediaProgramState {
     variant: string;
     selection: "auto" | "manual";
     audioTrack: string | null;
+    textTrack: string | null;
+    /** A subtitle refresh failure does not stop otherwise valid video playback. */
+    textTrackError: string | null;
     available: {
         start: number;
         end: number;

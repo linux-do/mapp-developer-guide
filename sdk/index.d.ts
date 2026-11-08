@@ -7,7 +7,7 @@ export type { NetworkTools } from "./network-tools.js";
 export type { DeviceClient, DeviceSupported, CaptureKind, CaptureOptions, CaptureSnapshot, CapturedFrame, RecordingChunk, FinishedRecording, LocationSnapshot, UsbDeviceSnapshot, } from "./device-client.js";
 export type { DevicePolicy, UsbDeviceDeclaration, BluetoothDeviceDeclaration, } from "./device-policy.js";
 export type { CodeDeclarations } from "./code-policy.js";
-export type { MediaProgram, MediaProgramSource, MediaProgramState, MediaFragment, MediaProgramTrack, MediaProgramVariant, MediaTimelineSegment, } from "./media-program.js";
+export type { MediaProgram, MediaByteRange, MediaAppendWindow, MediaTextSegment, MediaProgramTextTrack, MediaProgramSource, MediaProgramState, MediaFragment, MediaProgramTrack, MediaProgramVariant, MediaTimelineSegment, } from "./media-program.js";
 export type { HttpMethod, JsonValue, Permission, RemoteAssetDeclaration, RemoteAssetMime, } from "./types.js";
 export interface MiniAppUser {
     id: number;
@@ -271,6 +271,10 @@ export interface MiniAppSDK {
          */
         stop(handle: string): Promise<null>;
     };
+    readonly audioWorklet: {
+        /** Load a declared processor into a managed online context; cancellation during native loading closes that context. */
+        addModule(context: AudioContext, path: string, options?: RequestOptions): Promise<void>;
+    };
     readonly video: {
         play(asset: string, options?: PlaybackOptions): Promise<{
             handle: string;
@@ -291,6 +295,8 @@ export interface MiniAppSDK {
         }>;
         setVariant(handle: string, id: string, options?: RequestOptions): Promise<MediaProgramState>;
         selectAudioTrack(handle: string, id: string, options?: RequestOptions): Promise<MediaProgramState>;
+        /** Select a declared WebVTT track, or null to hide subtitles. */
+        selectTextTrack(handle: string, id: string | null, options?: RequestOptions): Promise<MediaProgramState>;
         updateProgram(handle: string, program: MediaProgram, options?: RequestOptions): Promise<MediaProgramState>;
         /** Play fixed CDN fragments after each has passed integrity verification. */
         playSegments(source: SegmentedVideoSource, options?: Omit<PlaybackOptions, "loop">): Promise<{

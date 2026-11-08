@@ -33,6 +33,7 @@ try {
 | `pointer.lock`                             | 原生 `Element.requestPointerLock()`、`document.exitPointerLock()`     |
 | `audio.play` / `video.play`                | `audio.play(assetId)`、`video.play(assetId)`、对应 `stop(handle)`     |
 | `audio.webAudio`                           | 原生在线 `AudioContext`，调用方式仍为浏览器 API                       |
+| `audio.worklet`                            | `audioWorklet.addModule(context, path, options?)`，另需 `audio.webAudio` |
 | `network.request`                          | `http.request/stream/events(endpointName, options)`                   |
 | `network.websocket`                        | `webSocket.connect(endpointName, options)`                            |
 | `assets.remote`                            | `assets.readBytes/readText/readJson(path)` 读取声明的 CDN 素材        |
@@ -67,7 +68,7 @@ const { locale } = await sdk.theme.get();
 const unsubscribe = sdk.theme.onChange(({ locale }) => updateLanguage(locale));
 ```
 
-更多能力：[外链、文件、分享、常亮、手柄与存档备份](../docs/browser-capabilities.md) · [分包、ESM 与 Worker](../docs/execution.md) · [网络恢复与分片上传](../docs/network-recovery.md) · [分片视频与画中画](../docs/segmented-media.md) · [直播、清晰度、音轨与跳转](../docs/media-timelines.md) · [设备访问](../docs/device-access.md)。
+更多能力：[外链、文件、分享、常亮、手柄与存档备份](../docs/browser-capabilities.md) · [分包、ESM 与 Worker](../docs/execution.md) · [网络恢复与分片上传](../docs/network-recovery.md) · [分片视频与画中画](../docs/segmented-media.md) · [直播、清晰度、音轨与跳转](../docs/media-timelines.md) · [设备访问](../docs/device-access.md) · [AudioWorklet](../docs/audio-worklet.md)。
 
 分片播放 `video.playSegments` 同时需要 `video.play` 与 `assets.remote`；画中画沿用 `video.play`。`network.reconnectSocket/reconnectEvents/uploadChunks` 复用底层网络权限，不新增业务权限。
 
@@ -99,7 +100,7 @@ const unsubscribe = sdk.theme.onChange(({ locale }) => updateLanguage(locale));
 
 浏览器的用户手势要求仍然存在：在应用自己的点击处理函数中调用 `context.resume()`，并处理拒绝。先完成首次渲染并调用 `sdk.lifecycle.ready()`，不要等待音频启动或 `resume()` 完成后才显示界面。
 
-`OfflineAudioContext` 可用于离线处理，无需 `audio.webAudio`，也不直接发声。不支持 `createMediaStreamDestination()` 或 AudioWorklet 脚本加载。
+`OfflineAudioContext` 可用于离线处理，无需 `audio.webAudio`，也不直接发声。不支持 `createMediaStreamDestination()`。受控在线 context 可通过 [`sdk.audioWorklet.addModule()`](../docs/audio-worklet.md) 加载已声明处理器，需同时批准 `audio.webAudio` 与 `audio.worklet`；OfflineAudioContext 不使用该入口。
 
 ## 包内文件
 

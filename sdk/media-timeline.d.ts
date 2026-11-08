@@ -2,7 +2,10 @@
 import { type MediaFragment, type MediaProgram } from "./media-program.js";
 export interface MediaTimelineOptions {
     /** Resolve a playlist reference to an already approved fragment; this function never fetches it. */
-    resolveFragment: (uri: string) => MediaFragment;
+    resolveFragment: (uri: string, range?: Readonly<{
+        offset: number;
+        length: number;
+    }>) => MediaFragment;
     /** Presentation time of the first listed segment; required for live HLS and duration-only dynamic DASH. */
     startTime?: number;
 }
@@ -25,8 +28,10 @@ export interface HlsTimelineOptions extends MediaTimelineOptions {
 export interface DashTimelineOptions extends MediaTimelineOptions {
     /** Source MPD location for relative BaseURL/segment resolution; no request is made to this address. */
     baseUri?: string;
+    /** Finite presentation-window end for otherwise open-ended templates; no UTC availability is inferred. */
+    endTime?: number;
 }
 /** Convert already obtained HLS master/media texts into an explicit, resolver-pinned MSE timeline. */
 export declare function parseHlsTimeline(playlists: ReadonlyMap<string, string>, entry: string, options: HlsTimelineOptions): MediaProgram;
-/** Convert one explicit DASH Period; SegmentTimeline repeats are bounded by the supplied SegmentURL list. */
+/** Resolve only finite, explicit DASH references, including compatible Period transitions. */
 export declare function parseDashTimeline(document: Document, options: DashTimelineOptions): MediaProgram;

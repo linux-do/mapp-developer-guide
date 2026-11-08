@@ -158,7 +158,7 @@ const atlas: RemoteAssetDeclaration = {
 | 文件数与声明大小       | 不另设配额，清单受 manifest 1 MiB 边界约束；size 必须是精确的正安全整数                                                                           |
 | 不同文件并发与超时     | 浏览器调度；可通过 signal、timeoutMs 控制                                                                                                         |
 | 当前实例已验证素材缓存 | 最多 64 MiB                                                                                                                                       |
-| 支持 MIME              | PNG/JPEG/GIF/WebP/AVIF；WAV/MP3/Ogg/AAC/FLAC/M4A/WebM 音频；MP4/WebM/Ogg 视频；`application/json`、`application/octet-stream`、`application/wasm` |
+| 支持 MIME              | PNG/JPEG/GIF/WebP/AVIF；WAV/MP3/Ogg/AAC/FLAC/M4A/WebM 音频；MP4/WebM/Ogg 视频；`text/vtt` 字幕；`application/json`、`application/octet-stream`、`application/wasm`；声明执行角色的 `text/javascript`、`application/javascript` |
 
 清单元数据仍计入 manifest 的 1 MiB 上限。远程素材下载后先验证完整大小、MIME 和 SHA-256，再提供给应用；命中当前实例的已验证缓存时复用结果。浏览器可缓存素材以减少下次下载，从持久缓存读取时仍完整验证。超过缓存容量的素材可正常读取，只是不保留该级缓存；缓存可能被清理，不保证离线可用。现有应用无需改动。大型素材建议按关卡加载，并释放不再使用的 Blob URL。
 
@@ -222,7 +222,7 @@ function endCharge() {
 
 先渲染界面并调用 `sdk.lifecycle.ready()`，再在应用自己的点击处理函数中调用 `context.resume()`。浏览器仍可能要求该用户手势；不要先等待音频启动再进行首次渲染，并处理拒绝或一直未恢复的状态。
 
-`OfflineAudioContext` 允许离线处理，不需要 `audio.webAudio` 且不会直接输出声音。不支持 `createMediaStreamDestination()` 和 AudioWorklet 脚本加载。
+`OfflineAudioContext` 允许离线处理，不需要 `audio.webAudio` 且不会直接输出声音。不支持 `createMediaStreamDestination()`。在线 context 可通过 `sdk.audioWorklet.addModule()` 加载已声明处理器，另需 `audio.worklet`，使用方式见 [AudioWorklet](audio-worklet.md)；离线 context 不使用该入口。
 
 ## 开发者服务的 JWT 公钥
 

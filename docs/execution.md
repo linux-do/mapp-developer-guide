@@ -97,6 +97,8 @@ Worker 内可用 `miniApp.workers.create(path)` 创建已声明的子 Worker；�
 
 可用 `sdk.capabilities.get()` 检测能力，并结合 `sdk.permissions.has()` 判断批准结果。浏览器不支持或策略禁止时处理 `BROWSER_UNSUPPORTED`；加载失败和取消不能视为成功。
 
-原生 SharedWorker 跨文档共享、SharedArrayBuffer、多线程 WASM 与 AudioWorklet 仍受当前浏览器隔离条件限制；使用专用 Worker、消息传递和原生单线程 WebAssembly 降级，不通过同源 iframe 绕过隔离。
+原生 SharedWorker 跨文档共享、SharedArrayBuffer 和多线程 WASM 仍受当前浏览器隔离条件限制；使用专用 Worker、消息传递和原生单线程 WebAssembly 降级，不通过同源 iframe 绕过隔离。
 
 应用不能创建嵌套 iframe、frame、object、embed 或其他浏览上下文；不能用新窗口取得未受控的原生接口。页面内布局、Canvas、WebGL、Shadow DOM 和消息计算 Worker 仍可使用。
+
+音频处理器通过独立的[受控 AudioWorklet 接口](audio-worklet.md)声明和加载，不能用普通分包或 Worker 代替其审核角色。
