@@ -68,6 +68,8 @@ const { locale } = await sdk.theme.get();
 const unsubscribe = sdk.theme.onChange(({ locale }) => updateLanguage(locale));
 ```
 
+`links.open(url)` 仅接受 manifest `links` 数组中的完整 URL；query、fragment 也须一致。无声明的旧版本同样不可打开外链。完整示例见[外链声明](../docs/browser-capabilities.md#外链文件与分享)。
+
 更多能力：[外链、文件、分享、常亮、手柄与存档备份](../docs/browser-capabilities.md) · [分包、ESM 与 Worker](../docs/execution.md) · [网络恢复与分片上传](../docs/network-recovery.md) · [分片视频与画中画](../docs/segmented-media.md) · [直播、清晰度、音轨与跳转](../docs/media-timelines.md) · [设备访问](../docs/device-access.md) · [AudioWorklet](../docs/audio-worklet.md)。
 
 分片播放 `video.playSegments` 同时需要 `video.play` 与 `assets.remote`；画中画沿用 `video.play`。`network.reconnectSocket/reconnectEvents/uploadChunks` 复用底层网络权限，不新增业务权限。

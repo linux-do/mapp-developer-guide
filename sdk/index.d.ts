@@ -173,7 +173,7 @@ export interface MiniAppSDK {
     };
     readonly network: NetworkTools;
     readonly links: {
-        /** Open an HTTP(S) address in a separate tab after the user confirms its destination. */
+        /** Open an exact manifest.links URL after user confirmation; undeclared destinations are denied. */
         open(url: string, options?: RequestOptions): Promise<null>;
     };
     readonly files: {

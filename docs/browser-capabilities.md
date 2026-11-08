@@ -18,6 +18,15 @@
 
 ## 外链、文件与分享
 
+打开外链须申请 `links.open`，并在 manifest 的 `links` 数组提前声明完整地址：
+
+```json
+{
+  "permissions": ["links.open"],
+  "links": ["https://example.com/help"]
+}
+```
+
 ```ts
 await sdk.links.open("https://example.com/help");
 await sdk.files.save("progress.json", JSON.stringify({ level: 3 }));
@@ -27,7 +36,11 @@ await sdk.sharing.share({
 });
 ```
 
-外链只接受不含账号密码的 HTTP(S) 地址，在新标签页打开并隔离 opener/referrer。文件内容支持字符串、Blob、ArrayBuffer 和 typed array；文件名不能含路径、控制字符或方向覆盖字符，下载按普通二进制交付，保留原始字节。分享支持 `title`、`text`、HTTP(S) `url` 和 `File[]`，目标由系统分享面板提供；分享完成不代表接收方已收到或处理内容。
+`links.open` 按完整字符串匹配清单，query 和 `#` 片段也必须一致；不支持域名、路径前缀或通配符匹配。URL 使用不含账号密码的绝对 HTTP(S) 地址，最长 16 KiB；国际域名使用 Punycode，路径、query 和 fragment 中的非 ASCII 字符使用百分号编码。不接受原始空白、反斜杠、无效百分号转义或相对路径段。审核页面展示完整清单，变更地址需重新构建、提审。
+
+未声明的目标返回 `LINK_NOT_ALLOWED`，不弹确认框、不打开页面。缺少清单的旧版即使曾获批，也不能打开外链；其实际 `links.open` 权限会被移除，需处理 `PERMISSION_DENIED`。已声明目标仍需用户确认，在新标签页打开并隔离 opener/referrer。校验针对 SDK 打开时的初始 URL，外部网站后续重定向由浏览器处理。
+
+文件内容支持字符串、Blob、ArrayBuffer 和 typed array；文件名不能含路径、控制字符或方向覆盖字符，下载按普通二进制交付，保留原始字节。分享支持 `title`、`text`、HTTP(S) `url` 和 `File[]`，目标由系统分享面板提供；分享完成不代表接收方已收到或处理内容。
 
 ## 屏幕常亮与手柄
 
