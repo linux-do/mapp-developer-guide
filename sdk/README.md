@@ -20,36 +20,36 @@ try {
 
 ## 权限与 API
 
-| 权限                                       | 方法                                                                  |
-| ------------------------------------------ | --------------------------------------------------------------------- |
-| `user.read`                                | `user.getCurrent()`                                                   |
-| `user.lookup`                              | `user.getById(userId)`                                                |
-| `launch.read`                              | `launch.getParameters()`                                              |
-| `theme.read`                               | `theme.get()`、`theme.onChange(callback)`                             |
-| `storage.read` / `storage.write`           | `localStorage.getItem/setItem/removeItem/clear/exportData/importData` |
-| `cookies.read` / `cookies.write`           | `cookies.get/set/remove`                                              |
-| `clipboard.read` / `clipboard.write`       | `clipboard.readText/writeText`                                        |
-| `fullscreen`                               | `fullscreen.request/exit`                                             |
-| `pointer.lock`                             | 原生 `Element.requestPointerLock()`、`document.exitPointerLock()`     |
-| `audio.play` / `video.play`                | `audio.play(assetId)`、`video.play(assetId)`、对应 `stop(handle)`     |
-| `audio.webAudio`                           | 原生在线 `AudioContext`，调用方式仍为浏览器 API                       |
+| 权限                                       | 方法                                                                     |
+| ------------------------------------------ | ------------------------------------------------------------------------ |
+| `user.read`                                | `user.getCurrent()`                                                      |
+| `user.lookup`                              | `user.getById(userId)`                                                   |
+| `launch.read`                              | `launch.getParameters()`                                                 |
+| `theme.read`                               | `theme.get()`、`theme.onChange(callback)`                                |
+| `storage.read` / `storage.write`           | `localStorage.getItem/setItem/removeItem/clear/exportData/importData`    |
+| `cookies.read` / `cookies.write`           | `cookies.get/set/remove`                                                 |
+| `clipboard.read` / `clipboard.write`       | `clipboard.readText/writeText`                                           |
+| `fullscreen`                               | `fullscreen.request/exit`                                                |
+| `pointer.lock`                             | 原生 `Element.requestPointerLock()`、`document.exitPointerLock()`        |
+| `audio.play` / `video.play`                | `audio.play(assetId)`、`video.play(assetId)`、对应 `stop(handle)`        |
+| `audio.webAudio`                           | 原生在线 `AudioContext`，调用方式仍为浏览器 API                          |
 | `audio.worklet`                            | `audioWorklet.addModule(context, path, options?)`，另需 `audio.webAudio` |
-| `network.request`                          | `http.request/stream/events(endpointName, options)`                   |
-| `network.websocket`                        | `webSocket.connect(endpointName, options)`                            |
-| `assets.remote`                            | `assets.readBytes/readText/readJson(path)` 读取声明的 CDN 素材        |
-| `links.open`                               | `links.open(url)`                                                     |
-| `files.save`                               | `files.save(name, data)`                                              |
-| `sharing.share`                            | `sharing.share(data)`                                                 |
-| `screen.keepAwake`                         | `screen.setKeepAwake(enabled)`                                        |
-| `gamepad.read`                             | `gamepad.get()` 或原生手柄 API                                        |
-| `code.load`                                | `scripts.load(path)`                                                  |
-| `workers.create`                           | `workers.create(path, options?)`                                      |
-| `code.modules`                             | `modules.import(path)`                                                |
-| `code.eval`                                | 隔离环境内的 `eval` / `new Function`                                  |
-| `video.stream`                             | 已审核业务端点提供的媒体时间线与片段，另需网络、播放权限              |
-| `camera` / `microphone` / `screen.capture` | `media.capture`、截图、分块录制                                       |
-| `location.read`                            | `location.get()`                                                      |
-| `device.usb` / `device.bluetooth`          | 已审核设备的选择、连接与协议操作                                      |
+| `network.request`                          | `http.request/stream/events(endpointName, options)`                      |
+| `network.websocket`                        | `webSocket.connect(endpointName, options)`                               |
+| `assets.remote`                            | `assets.readBytes/readText/readJson(path)` 读取声明的 CDN 素材           |
+| `links.open`                               | `links.open(url)`                                                        |
+| `files.save`                               | `files.save(name, data)`                                                 |
+| `sharing.share`                            | `sharing.share(data)`                                                    |
+| `screen.keepAwake`                         | `screen.setKeepAwake(enabled)`                                           |
+| `gamepad.read`                             | `gamepad.get()` 或原生手柄 API                                           |
+| `code.load`                                | `scripts.load(path)`                                                     |
+| `workers.create`                           | `workers.create(path, options?)`                                         |
+| `code.modules`                             | `modules.import(path)`                                                   |
+| `code.eval`                                | 隔离环境内的 `eval` / `new Function`                                     |
+| `video.stream`                             | 已审核业务端点提供的媒体时间线与片段，另需网络、播放权限                 |
+| `camera` / `microphone` / `screen.capture` | `media.capture`、截图、分块录制                                          |
+| `location.read`                            | `location.get()`                                                         |
+| `device.usb` / `device.bluetooth`          | 已审核设备的选择、连接与协议操作                                         |
 
 先检查 `sdk.permissions.has()`，并处理 Promise 拒绝。`sdk.capabilities.get()` 返回当前浏览器的能力快照及批准权限，不触发设备许可。匿名模式的用户为 `null`，不能查询其他用户、使用剪贴板或取得平台身份 JWT；可调用获批且声明 `auth: "none"` 的公开 HTTP/WS，也可读取获批的固定 CDN 素材。
 
@@ -58,7 +58,7 @@ try {
 - 头像支持 PNG、JPEG、GIF、WebP 和 AVIF。不支持的图片格式返回 `null`。
 - 主题包含颜色、明暗、语言、容器尺寸和减少动效偏好；`onChange` 返回取消订阅函数。
 - 启动参数返回 `{ query: Record<string, string[]>, hash }` 快照；重复 query 保留，hash 不含 `#`。不另设总量、键数或单值额度，平台保留的身份与运行参数仍会过滤；不能作为身份凭据。
-- `audio.play/video.play` 只播放 manifest 声明的包内资源或固定 CDN 素材。远程媒体同时需要 `assets.remote` 和对应播放权限。剪贴板保留用户确认；全屏在浏览器需要点击激活时显示“进入全屏”操作；视频直接显示播放器。音频输出由本次运行的声音开关控制。
+- `audio.play/video.play` 只播放 manifest 声明的包内资源或固定 CDN 素材。远程媒体同时需要 `assets.remote` 和对应播放权限。剪贴板保留用户确认；每次进入全屏前都显示“进入全屏”确认；视频直接显示播放器。音频输出由本次运行的声音开关控制。
 - SDK 不再设置通用每分钟调用配额、音效每秒次数或网络数据大小配额。网络、素材读取和媒体播放支持可选 `signal`、`timeoutMs`，默认不设总超时。处理权限、浏览器失败、取消、`TIMEOUT` 和离开后的 `APP_UNLOADED`；论坛授权等服务端接口仍有自身限流。
 
 获取当前论坛界面语言需 `theme.read`，语言代码沿用 Discourse，例如 `zh_CN`、`zh_TW`、`en`：
@@ -83,6 +83,8 @@ const unsubscribe = sdk.theme.onChange(({ locale }) => updateLanguage(locale));
 使用 `document.exitPointerLock()` 或 Esc 退出；应用失焦、隐藏或关闭时会自动释放，不自动重锁。优先使用不带选项的标准锁；`unadjustedMovement` 是可选能力，不支持时提供标准锁入口，让用户点击重试。
 
 全屏仍使用 `sdk.fullscreen.request/exit`。若同时需要全屏和锁定，先通过 SDK 进入全屏，再让用户在应用内点击锁定；不要在 `await sdk.fullscreen.request()` 后直接请求原生锁定，此时最初的用户激活已不可依赖。
+
+`fullscreen.exit()` 同时撤销尚未确认或正在进入的请求，原 `request()` 以 `USER_CANCELLED` 拒绝。等待退出完成后再重新请求。
 
 已有原生锁定代码只需新增权限、重新打包提审，调用方式不变；未使用锁定的应用无需申请。`setPointerCapture()` 用于拖动和长按，不需要 `pointer.lock`，见 [开发说明](../docs/developer-guide.md#鼠标锁定)。
 
