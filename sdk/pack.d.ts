@@ -26,6 +26,8 @@ export interface MiniAppManifest {
     devices?: DevicePolicy;
     /** Exact external URLs allowed by links.open, including fixed query and fragment. */
     links?: string[];
+    /** Application UUIDv7 destinations reviewed for app.call. */
+    calls?: string[];
     /** Pinned CDN files; their bytes are omitted from the application ZIP. */
     remote_assets?: Record<string, RemoteAssetDeclaration>;
     media?: Record<string, {

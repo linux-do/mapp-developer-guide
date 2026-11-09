@@ -8,6 +8,8 @@
 
 参考：[SDK API](sdk/README.md) · [HTTP/WS](docs/sdk-network.md) · [网络恢复与上传](docs/network-recovery.md) · [服务端鉴权](docs/server-auth.md) · [浏览器操作与存档](docs/browser-capabilities.md) · [分包与 Worker](docs/execution.md) · [分片视频](docs/segmented-media.md) · [直播与多轨时间线](docs/media-timelines.md) · [设备访问](docs/device-access.md) · [AudioWorklet](docs/audio-worklet.md)。
 
+应用间同页跳转与返回见 [应用调用](docs/app-navigation.md)。
+
 开发者资格由社区配置。上传原始 `app.zip`；不要把访问令牌或其他秘密放进包内。
 
 ## 仓库内容
