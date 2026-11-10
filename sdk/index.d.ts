@@ -2,8 +2,10 @@
 import type { DeviceClient, DeviceSupported } from "./device-client.js";
 import type { MediaProgram, MediaProgramSource, MediaProgramState } from "./media-program.js";
 import type { NetworkTools } from "./network-tools.js";
+import type { NotificationPermit, NotificationRequest } from "./notification-policy.js";
 import type { AppQuery, HttpMethod, JsonValue, Permission } from "./types.js";
 export type { NetworkTools } from "./network-tools.js";
+export type { NotificationTemplate, NotificationTemplates, NotificationRequest, NotificationPermit, } from "./notification-policy.js";
 export type { DeviceClient, DeviceSupported, CaptureKind, CaptureOptions, CaptureSnapshot, CapturedFrame, RecordingChunk, FinishedRecording, LocationSnapshot, UsbDeviceSnapshot, } from "./device-client.js";
 export type { DevicePolicy, UsbDeviceDeclaration, BluetoothDeviceDeclaration, } from "./device-policy.js";
 export type { CodeDeclarations } from "./code-policy.js";
@@ -145,6 +147,10 @@ export interface MiniAppSocket {
 }
 /** Installed by the platform before the application's bundled script runs. */
 export interface MiniAppSDK {
+    readonly notifications: {
+        /** Ask during a real user action for one future delivery using a reviewed template. */
+        request(templateId: string, request: NotificationRequest, options?: RequestOptions): Promise<NotificationPermit>;
+    };
     readonly app: {
         /** Navigate to a manifest.calls destination. Success unloads this instance; continue at the destination's startup. */
         call(appId: string, query?: AppQuery, options?: RequestOptions): Promise<void>;

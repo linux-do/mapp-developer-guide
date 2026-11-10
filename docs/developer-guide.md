@@ -168,6 +168,8 @@ const atlas: RemoteAssetDeclaration = {
 
 应用之间可通过 [`app.call/return`](app-navigation.md) 同页跳转，目标 ID 在 manifest `calls` 声明，query 可动态传入。返回会重新启动栈中的应用，结果通过启动参数接收。
 
+需要提醒用户时，声明[通知模板](notifications.md)，通过 `sdk.notifications.request()` 提前申请下一次投递。前端提醒限 24 小时，后台许可限 30 天，每次均需用户同意。
+
 ## 音频与长按操作
 
 获批 `audio.webAudio`，或同时获批 `audio.play` 并声明了音频素材的应用，在代码执行前显示“开启声音”和“静音进入”，只决定初始声音状态。运行中可通过声音开关（窄屏在“更多”菜单中）随时切换；开关只影响本次运行，关闭或刷新后重新选择。`audio.play/stop` 不弹框，播放和停止由应用控制；平台只提供总声音开关。视频直接显示播放器，不再重复申请播放许可；剪贴板保留用户确认，每次进入全屏前都显示“进入全屏”确认。

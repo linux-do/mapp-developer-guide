@@ -10,6 +10,8 @@
 
 应用间同页跳转与返回见 [应用调用](docs/app-navigation.md)。
 
+一次性提醒与后台通知见 [通知](docs/notifications.md)。
+
 开发者资格由社区配置。上传原始 `app.zip`；不要把访问令牌或其他秘密放进包内。
 
 ## 仓库内容
