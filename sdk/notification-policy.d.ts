@@ -3,12 +3,14 @@ import type { AppQuery } from "./types.js";
 export interface NotificationTemplate {
     title: string;
     body: string;
-    /** Review and permission-preview examples; never substituted into a real delivery. */
+    /** Review examples; never substituted into a real delivery. */
     examples?: Record<string, string>;
 }
 export type NotificationTemplates = Record<string, NotificationTemplate>;
 export interface NotificationRequest {
     mode: "frontend" | "backend";
+    /** Reason for requesting permission. */
+    reason: string;
     /** Optional scheduled delivery as Unix epoch milliseconds, for frontend mode only. */
     at?: number;
     params?: Record<string, string>;
@@ -59,6 +61,7 @@ export declare function normalizeNotificationRequest(value: unknown, { templates
 }): {
     template_id: string;
     mode: "frontend" | "backend";
+    reason: string;
     at?: number;
     params: Record<string, string>;
     query: Record<string, string[]>;

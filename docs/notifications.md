@@ -24,9 +24,11 @@
 }
 ```
 
-模板 ID 和变量名以英文字母开头，其后可用字母、数字、下划线，最长 64 字符。`%app_name%` 由平台填写；其他变量通过 `params` 传入字符串。`examples` 只用于审核和授权预览。
+模板 ID 和变量名以英文字母开头，其后可用字母、数字、下划线，最长 64 字符。`%app_name%` 由平台填写；其他变量通过 `params` 传入字符串。`examples` 为审核示例。
 
 标题、正文使用纯文本。平台自动加 `【微应用】` 标题前缀，并在正文末尾用横线分隔应用名、打开链接和关闭通知提示，无需自行拼接。
+
+`reason` 为必填的申请理由。
 
 ## 前端提醒
 
@@ -34,6 +36,7 @@
 remindButton.addEventListener("click", () => {
   sdk.notifications.request("ready", {
     mode: "frontend",
+    reason: "收获提醒",
     at: Date.now() + 60 * 60 * 1000,
     params: { item: "农作物" },
     query: { view: "farm" },
@@ -49,7 +52,7 @@ remindButton.addEventListener("click", () => {
 
 ```ts
 notifyButton.addEventListener("click", () => {
-  sdk.notifications.request("ready", { mode: "backend" })
+  sdk.notifications.request("ready", { mode: "backend", reason: "任务完成提醒" })
     .then(async (permit) => {
       if (permit.mode === "backend") {
         await sdk.http.request("saveReminder", {
