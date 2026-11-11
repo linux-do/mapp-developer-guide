@@ -3,7 +3,7 @@
   "id": "01a1966a-f4a0-7b43-ad9c-c46b7f0e0281",
   "name": "2048",
   "tags": ["游戏", "益智", "休闲"],
-  "version": "1.0.1",
+  "version": "1.1.0",
   "entry": "index.html",
   "script": "app.js",
   "style": "app.css",

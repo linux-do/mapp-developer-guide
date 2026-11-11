@@ -6,6 +6,7 @@ import type {
   MiniAppSDK,
   MiniAppSocket,
   MiniAppTheme,
+  MiniAppUser,
   Permission,
 } from "@discourse-mini-app/sdk";
 import { getSDK } from "@discourse-mini-app/sdk";
@@ -396,6 +397,20 @@ function applyTheme(theme: MiniAppTheme) {
   }
 }
 
+function renderUser(value: MiniAppUser | null) {
+  const avatar = element("user-avatar");
+  const avatarUrl = value?.avatarUrl;
+  avatar.hidden = !avatarUrl?.startsWith("blob:");
+  if (avatarUrl?.startsWith("blob:")) {
+    avatar.src = avatarUrl;
+  } else {
+    avatar.removeAttribute("src");
+  }
+  value === null
+    ? output("identity-output", t("anonymous"))
+    : dataOutput("identity-output", value);
+}
+
 async function run<T>(
   operation: string,
   action: () => T | Promise<T>,
@@ -565,24 +580,7 @@ const actions: Record<string, () => Promise<void>> = {
     ),
   permissions: () =>
     run("permissions", () => sdk!.permissions.list(), renderPermissions),
-  user: () =>
-    run(
-      "user",
-      () => sdk!.user.getCurrent(),
-      (value) => {
-        const avatar = element("user-avatar");
-        const avatarUrl = value?.avatarUrl;
-        avatar.hidden = !avatarUrl?.startsWith("blob:");
-        if (avatarUrl?.startsWith("blob:")) {
-          avatar.src = avatarUrl;
-        } else {
-          avatar.removeAttribute("src");
-        }
-        value === null
-          ? output("identity-output", t("anonymous"))
-          : dataOutput("identity-output", value);
-      }
-    ),
+  user: () => run("user", () => sdk!.user.getCurrent(), renderUser),
   userLookup: () =>
     run(
       "userLookup",
@@ -593,7 +591,7 @@ const actions: Record<string, () => Promise<void>> = {
         }
         return sdk!.user.getById(userId);
       },
-      (value) => dataOutput("identity-output", value)
+      renderUser
     ),
   launch: () =>
     run(

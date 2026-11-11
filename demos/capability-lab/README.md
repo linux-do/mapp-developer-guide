@@ -5,7 +5,7 @@
 ```sh
 bun install --frozen-lockfile
 bun run dev
-MINI_APP_ID=平台应用ID MINI_APP_VERSION=1.1.0 bun run build
+MINI_APP_ID=平台应用ID MINI_APP_VERSION=1.1.1 bun run build
 ```
 
 预览地址：`http://127.0.0.1:5193/`。本地只预览布局，不模拟 SDK；上传 `dist/package/app.zip` 后运行。调试包使用 `bun run build:debug`。
