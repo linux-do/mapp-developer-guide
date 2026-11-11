@@ -94,6 +94,60 @@ export const OPERATION_IDS = Object.freeze([
   "pointerLock",
   "webAudioPlay",
   "webAudioStop",
+  "support",
+  "scriptRun",
+  "moduleRun",
+  "workerRun",
+  "evalRun",
+  "remoteRead",
+  "workletStart",
+  "workletStop",
+  "videoFormats",
+  "videoState",
+  "videoSeek",
+  "videoProgram",
+  "videoVariant",
+  "videoAudio",
+  "videoText",
+  "videoUpdate",
+  "programStop",
+  "pictureEnter",
+  "pictureExit",
+  "linkOpen",
+  "saveFile",
+  "share",
+  "wakeOn",
+  "wakeOff",
+  "gamepads",
+  "storageExport",
+  "storageImport",
+  "camera",
+  "microphone",
+  "screenCapture",
+  "captureFrame",
+  "recordingRead",
+  "recordingFinish",
+  "captureStop",
+  "recordingSave",
+  "locate",
+  "usbOpen",
+  "usbClose",
+  "bluetoothOpen",
+  "bluetoothClose",
+  "notifyFrontend",
+  "notifyBackend",
+  "appCall",
+  "appReturn",
+  "httpStream",
+  "httpEvents",
+  "eventRecover",
+  "uploadFile",
+  "uploadChunks",
+  "socketRecover",
+  "socketRecoverClose",
+  "socketText",
+  "socketBinary",
+  "extendedCancel",
 ]);
 const allowedIds = new Set(OPERATION_IDS);
 const allowedStates = new Set([
@@ -115,6 +169,18 @@ const allowedStates = new Set([
 
 export function safeCode(error: unknown): string {
   const name = (error as { name?: unknown } | null)?.name;
+  if (name === "AbortError") {
+    return "CANCELLED";
+  }
+  if (name === "TimeoutError") {
+    return "TIMEOUT";
+  }
+  if (name === "NotAllowedError") {
+    return "PERMISSION_DENIED";
+  }
+  if (name === "NotSupportedError") {
+    return "BROWSER_UNSUPPORTED";
+  }
   if (name === "CompileError") {
     return "WASM_COMPILE_ERROR";
   }
@@ -132,8 +198,11 @@ export function safeCode(error: unknown): string {
 
 export function resultState(error: unknown): ResultState {
   const code = safeCode(error);
-  if (code === "API_UNSUPPORTED") {
+  if (["API_UNSUPPORTED", "BROWSER_UNSUPPORTED"].includes(code)) {
     return "unsupported";
+  }
+  if (code === "NOT_CONFIGURED") {
+    return "notConfigured";
   }
   if (code === "PLATFORM_RESTRICTED") {
     return "restricted";

@@ -22,6 +22,8 @@ export interface MiniAppManifest {
     style: "app.css";
     permissions: readonly Permission[];
     name?: string;
+    /** Tags reviewed with this version. */
+    tags?: string[];
     assets?: string[];
     code?: CodeDeclarations;
     devices?: DevicePolicy;

@@ -23,6 +23,10 @@
     <a href="#layout" data-text="layoutTitle"></a>
     <a href="#capabilities" data-text="capabilitiesTitle"></a>
     <a href="#network" data-text="networkTitle"></a>
+    <a href="#execution" data-text="executionSection"></a>
+    <a href="#browser" data-text="browserSection"></a>
+    <a href="#flows" data-text="flowSection"></a>
+    <a href="#transfer" data-text="transferSection"></a>
     <a href="#results" data-text="resultsTitle"></a>
   </nav>
   <section class="lab__section" id="layout" aria-labelledby="layout-title">
@@ -165,6 +169,7 @@
           data-action="userLookup"
           data-text="userLookup"
         ></button>
+        <img id="user-avatar" class="lab__avatar" alt="" hidden />
         <pre
           class="lab__output"
           id="identity-output"
@@ -471,12 +476,23 @@
             <option>PUT</option>
             <option>PATCH</option>
             <option>DELETE</option>
+            <option value="HEAD">HEAD</option>
+            <option value="OPTIONS">OPTIONS</option>
+            <option value="PUT">PUT</option>
+            <option value="PATCH">PATCH</option>
+            <option value="DELETE">DELETE</option>
           </select></label
         >
         <label
           ><span data-text="queryJson"></span
-          ><textarea id="http-query" rows="2">{}</textarea>
-        </label>
+          ><textarea id="http-query" rows="2">{}</textarea></label
+        ><label
+          ><span data-text="responseType"></span
+          ><select id="http-response">
+            <option value="json">JSON</option>
+            <option value="text" data-text="textBody"></option>
+            <option value="bytes" data-text="binaryBody"></option></select
+        ></label>
         <label
           ><span data-text="bodyJson"></span
           ><textarea id="http-body" rows="2">
@@ -504,8 +520,13 @@
         /></label>
         <label
           ><span data-text="queryJson"></span
-          ><textarea id="socket-query" rows="2">{}</textarea>
-        </label>
+          ><textarea id="socket-query" rows="2">{}</textarea></label
+        ><label
+          ><span data-text="socketTextMode"></span
+          ><select id="socket-text-mode">
+            <option value="auto" data-text="socketAuto"></option>
+            <option value="text" data-text="textBody"></option></select
+        ></label>
         <label
           ><span data-text="socketData"></span
           ><textarea id="socket-data" rows="2">
@@ -527,6 +548,18 @@
             type="button"
             data-action="socketClose"
             data-text="socketClose"
+          ></button>
+        </div>
+        <div class="lab__actions">
+          <button
+            type="button"
+            data-action="socketText"
+            data-text="socketText"
+          ></button
+          ><button
+            type="button"
+            data-action="socketBinary"
+            data-text="socketBinary"
           ></button>
         </div>
         <output
@@ -552,6 +585,547 @@
         ></button>
       </div>
     </fieldset>
+  </section>
+  <section
+    class="lab__section"
+    id="execution"
+    aria-labelledby="execution-title"
+  >
+    <h2 id="execution-title" data-text="executionSection"></h2>
+    <div class="lab__capabilities">
+      <fieldset class="lab__group">
+        <legend data-text="supportTitle"></legend>
+        <p class="lab__small" data-text="supportHelp"></p>
+        <div class="lab__actions">
+          <button
+            type="button"
+            data-action="support"
+            data-text="support"
+          ></button>
+        </div>
+        <output
+          class="lab__output"
+          id="support-output"
+          data-text="notTested"
+          role="status"
+        ></output>
+      </fieldset>
+      <fieldset class="lab__group">
+        <legend data-text="executionTitle"></legend>
+        <p class="lab__small" data-text="executionHelp"></p>
+        <div class="lab__actions">
+          <button
+            type="button"
+            data-action="scriptRun"
+            data-text="scriptRun"
+          ></button
+          ><button
+            type="button"
+            data-action="moduleRun"
+            data-text="moduleRun"
+          ></button
+          ><button
+            type="button"
+            data-action="workerRun"
+            data-text="workerRun"
+          ></button
+          ><button
+            type="button"
+            data-action="evalRun"
+            data-text="evalRun"
+          ></button>
+        </div>
+        <label
+          ><span data-text="remotePath"></span
+          ><input id="remote-path" type="text" value="" autocomplete="off"
+        /></label>
+        <div class="lab__actions">
+          <button
+            type="button"
+            data-action="remoteRead"
+            data-text="remoteRead"
+          ></button>
+        </div>
+        <output
+          class="lab__output"
+          id="execution-output"
+          data-text="notTested"
+          role="status"
+        ></output>
+      </fieldset>
+      <fieldset class="lab__group">
+        <legend data-text="workletTitle"></legend>
+        <p class="lab__small" data-text="workletHelp"></p>
+        <div class="lab__actions">
+          <button
+            type="button"
+            data-action="workletStart"
+            data-text="workletStart"
+          ></button
+          ><button
+            type="button"
+            data-action="workletStop"
+            data-text="workletStop"
+          ></button>
+        </div>
+        <output
+          class="lab__output"
+          id="worklet-output"
+          data-text="notTested"
+          role="status"
+        ></output>
+      </fieldset>
+      <fieldset class="lab__group">
+        <legend data-text="programTitle"></legend>
+        <p class="lab__small" data-text="programHelp"></p>
+        <label
+          ><span data-text="programSource"></span
+          ><textarea id="video-source" rows="4" spellcheck="false">
+{"playlist":{"endpoint":"mediaPlaylist"}}</textarea
+          >
+        </label>
+        <div class="lab__actions">
+          <button
+            type="button"
+            data-action="videoFormats"
+            data-text="videoFormats"
+          ></button
+          ><button
+            type="button"
+            data-action="videoProgram"
+            data-text="videoProgram"
+          ></button
+          ><button
+            type="button"
+            data-action="videoState"
+            data-text="videoState"
+          ></button
+          ><button
+            type="button"
+            data-action="programStop"
+            data-text="programStop"
+          ></button>
+        </div>
+        <label
+          ><span data-text="seekTime"></span
+          ><input id="video-time" type="number" value="0.4" autocomplete="off"
+        /></label>
+        <div class="lab__actions">
+          <button
+            type="button"
+            data-action="videoSeek"
+            data-text="videoSeek"
+          ></button
+          ><button
+            type="button"
+            data-action="pictureEnter"
+            data-text="pictureEnter"
+          ></button
+          ><button
+            type="button"
+            data-action="pictureExit"
+            data-text="pictureExit"
+          ></button>
+        </div>
+        <label
+          ><span data-text="mediaChoice"></span
+          ><input id="video-choice" type="text" value="" autocomplete="off"
+        /></label>
+        <div class="lab__actions">
+          <button
+            type="button"
+            data-action="videoVariant"
+            data-text="videoVariant"
+          ></button
+          ><button
+            type="button"
+            data-action="videoAudio"
+            data-text="videoAudio"
+          ></button
+          ><button
+            type="button"
+            data-action="videoText"
+            data-text="videoText"
+          ></button
+          ><button
+            type="button"
+            data-action="videoUpdate"
+            data-text="videoUpdate"
+          ></button>
+        </div>
+        <output
+          class="lab__output"
+          id="program-output"
+          data-text="notTested"
+          role="status"
+        ></output>
+      </fieldset>
+    </div>
+  </section>
+  <section class="lab__section" id="browser" aria-labelledby="browser-title">
+    <h2 id="browser-title" data-text="browserSection"></h2>
+    <div class="lab__capabilities">
+      <fieldset class="lab__group">
+        <legend data-text="browserTitle"></legend>
+        <p class="lab__small" data-text="browserHelp"></p>
+        <label
+          ><span data-text="reviewedLink"></span
+          ><input id="link-target" type="text" value="" autocomplete="off"
+        /></label>
+        <div class="lab__actions">
+          <button
+            type="button"
+            data-action="linkOpen"
+            data-text="linkOpen"
+          ></button
+          ><button
+            type="button"
+            data-action="saveFile"
+            data-text="saveFile"
+          ></button
+          ><button type="button" data-action="share" data-text="share"></button
+          ><button
+            type="button"
+            data-action="wakeOn"
+            data-text="wakeOn"
+          ></button
+          ><button
+            type="button"
+            data-action="wakeOff"
+            data-text="wakeOff"
+          ></button
+          ><button
+            type="button"
+            data-action="gamepads"
+            data-text="gamepads"
+          ></button>
+        </div>
+        <output
+          class="lab__output"
+          id="browser-output"
+          data-text="notTested"
+          role="status"
+        ></output>
+      </fieldset>
+      <fieldset class="lab__group">
+        <legend data-text="backupTitle"></legend>
+        <p class="lab__small" data-text="backupHelp"></p>
+        <label
+          ><span data-text="backupFile"></span
+          ><input
+            id="backup-file"
+            type="file"
+            value=""
+            autocomplete="off" /></label
+        ><label class="lab__check"
+          ><input type="checkbox" id="backup-replace" /><span
+            data-text="backupReplace"
+          ></span
+        ></label>
+        <div class="lab__actions">
+          <button
+            type="button"
+            data-action="storageExport"
+            data-text="storageExport"
+          ></button
+          ><button
+            type="button"
+            data-action="storageImport"
+            data-text="storageImport"
+          ></button>
+        </div>
+        <output
+          class="lab__output"
+          id="backup-output"
+          data-text="notTested"
+          role="status"
+        ></output>
+      </fieldset>
+      <fieldset class="lab__group">
+        <legend data-text="captureTitle"></legend>
+        <p class="lab__small" data-text="captureHelp"></p>
+        <div class="lab__actions">
+          <button type="button" data-action="camera" data-text="camera"></button
+          ><button
+            type="button"
+            data-action="microphone"
+            data-text="microphone"
+          ></button
+          ><button
+            type="button"
+            data-action="screenCapture"
+            data-text="screenCapture"
+          ></button
+          ><button
+            type="button"
+            data-action="captureFrame"
+            data-text="captureFrame"
+          ></button
+          ><button
+            type="button"
+            data-action="recordingRead"
+            data-text="recordingRead"
+          ></button
+          ><button
+            type="button"
+            data-action="recordingFinish"
+            data-text="recordingFinish"
+          ></button
+          ><button
+            type="button"
+            data-action="captureStop"
+            data-text="captureStop"
+          ></button
+          ><button
+            type="button"
+            data-action="recordingSave"
+            data-text="recordingSave"
+          ></button>
+        </div>
+        <img
+          id="capture-frame"
+          class="lab__capture-frame"
+          alt=""
+          data-label="capturePreview"
+          hidden
+        /><output
+          class="lab__output"
+          id="capture-output"
+          data-text="notTested"
+          role="status"
+        ></output>
+      </fieldset>
+      <fieldset class="lab__group">
+        <legend data-text="deviceTitle"></legend>
+        <p class="lab__small" data-text="deviceHelp"></p>
+        <div class="lab__actions">
+          <button
+            type="button"
+            data-action="locate"
+            data-text="locate"
+          ></button>
+        </div>
+        <label
+          ><span data-text="usbAlias"></span
+          ><input id="usb-name" type="text" value="" autocomplete="off"
+        /></label>
+        <div class="lab__actions">
+          <button
+            type="button"
+            data-action="usbOpen"
+            data-text="usbOpen"
+          ></button
+          ><button
+            type="button"
+            data-action="usbClose"
+            data-text="usbClose"
+          ></button>
+        </div>
+        <label
+          ><span data-text="bluetoothAlias"></span
+          ><input id="bluetooth-name" type="text" value="" autocomplete="off"
+        /></label>
+        <div class="lab__actions">
+          <button
+            type="button"
+            data-action="bluetoothOpen"
+            data-text="bluetoothOpen"
+          ></button
+          ><button
+            type="button"
+            data-action="bluetoothClose"
+            data-text="bluetoothClose"
+          ></button>
+        </div>
+        <output
+          class="lab__output"
+          id="device-output"
+          data-text="notTested"
+          role="status"
+        ></output>
+      </fieldset>
+    </div>
+  </section>
+  <section class="lab__section" id="flows" aria-labelledby="flows-title">
+    <h2 id="flows-title" data-text="flowSection"></h2>
+    <div class="lab__capabilities">
+      <fieldset class="lab__group">
+        <legend data-text="notificationTitle"></legend>
+        <p class="lab__small" data-text="notificationHelp"></p>
+        <label
+          ><span data-text="notificationReason"></span
+          ><input
+            id="notification-reason"
+            type="text"
+            data-placeholder="notificationReasonDefault"
+        /></label>
+        <div class="lab__actions">
+          <button
+            type="button"
+            data-action="notifyFrontend"
+            data-text="notifyFrontend"
+          ></button
+          ><button
+            type="button"
+            data-action="notifyBackend"
+            data-text="notifyBackend"
+          ></button>
+        </div>
+        <output
+          class="lab__output"
+          id="notification-output"
+          data-text="notTested"
+          role="status"
+        ></output>
+      </fieldset>
+      <fieldset class="lab__group">
+        <legend data-text="appTitle"></legend>
+        <p class="lab__small" data-text="appHelp"></p>
+        <label
+          ><span data-text="appTarget"></span
+          ><input
+            id="app-target"
+            type="text"
+            value=""
+            autocomplete="off" /></label
+        ><label
+          ><span data-text="returnTarget"></span
+          ><input
+            id="app-return-target"
+            type="text"
+            value=""
+            autocomplete="off" /></label
+        ><label
+          ><span data-text="appQuery"></span
+          ><textarea id="app-query" rows="4" spellcheck="false">
+{"demo":"capability-lab"}</textarea
+          >
+        </label>
+        <div class="lab__actions">
+          <button
+            type="button"
+            data-action="appCall"
+            data-text="appCall"
+          ></button
+          ><button
+            type="button"
+            data-action="appReturn"
+            data-text="appReturn"
+          ></button>
+        </div>
+        <output
+          class="lab__output"
+          id="app-output"
+          data-text="notTested"
+          role="status"
+        ></output>
+      </fieldset>
+    </div>
+  </section>
+  <section class="lab__section" id="transfer" aria-labelledby="transfer-title">
+    <h2 id="transfer-title" data-text="transferSection"></h2>
+    <div class="lab__capabilities">
+      <fieldset class="lab__group">
+        <legend data-text="transferTitle"></legend>
+        <p class="lab__small" data-text="transferHelp"></p>
+        <label
+          ><span data-text="streamEndpoint"></span
+          ><input
+            id="stream-endpoint"
+            type="text"
+            value="stream"
+            autocomplete="off" /></label
+        ><label
+          ><span data-text="eventsEndpoint"></span
+          ><input
+            id="events-endpoint"
+            type="text"
+            value="events"
+            autocomplete="off" /></label
+        ><label
+          ><span data-text="eventCursor"></span
+          ><input
+            id="event-cursor"
+            type="text"
+            value="cursor"
+            autocomplete="off"
+        /></label>
+        <div class="lab__actions">
+          <button
+            type="button"
+            data-action="httpStream"
+            data-text="httpStream"
+          ></button
+          ><button
+            type="button"
+            data-action="httpEvents"
+            data-text="httpEvents"
+          ></button
+          ><button
+            type="button"
+            data-action="eventRecover"
+            data-text="eventRecover"
+          ></button>
+        </div>
+        <label
+          ><span data-text="uploadEndpoint"></span
+          ><input
+            id="upload-endpoint"
+            type="text"
+            value="upload"
+            autocomplete="off" /></label
+        ><label
+          ><span data-text="uploadFileLabel"></span
+          ><input
+            id="upload-file"
+            type="file"
+            value=""
+            autocomplete="off" /></label
+        ><label
+          ><span data-text="uploadMode"></span
+          ><select id="upload-mode">
+            <option value="raw" data-text="rawBody"></option>
+            <option value="multipart">multipart/form-data</option>
+          </select></label
+        ><label
+          ><span data-text="uploadOffset"></span
+          ><input id="upload-offset" type="number" value="0" autocomplete="off"
+        /></label>
+        <div class="lab__actions">
+          <button
+            type="button"
+            data-action="uploadFile"
+            data-text="uploadFile"
+          ></button
+          ><button
+            type="button"
+            data-action="uploadChunks"
+            data-text="uploadChunks"
+          ></button
+          ><button
+            type="button"
+            data-action="socketRecover"
+            data-text="socketRecover"
+          ></button
+          ><button
+            type="button"
+            data-action="socketRecoverClose"
+            data-text="socketRecoverClose"
+          ></button
+          ><button
+            type="button"
+            data-action="extendedCancel"
+            data-text="extendedCancel"
+          ></button>
+        </div>
+        <output
+          class="lab__output"
+          id="transfer-output"
+          data-text="notTested"
+          role="status"
+        ></output>
+      </fieldset>
+    </div>
   </section>
   <section class="lab__section" id="results" aria-labelledby="results-title">
     <div class="lab__section-heading">

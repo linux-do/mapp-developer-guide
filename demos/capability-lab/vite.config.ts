@@ -2,10 +2,30 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
 
+const manifestPath = fileURLToPath(new URL("./manifest.json", import.meta.url));
+
 export default defineConfig({
   publicDir: "public",
   server: { host: "127.0.0.1", port: 5193, strictPort: true },
   plugins: [
+    {
+      name: "demo-manifest",
+      enforce: "pre",
+      load(id) {
+        if (id === manifestPath) {
+          const manifest = JSON.parse(
+            readFileSync(manifestPath, "utf8")
+          ) as Record<string, unknown>;
+          if (process.env.MINI_APP_ID) {
+            manifest.id = process.env.MINI_APP_ID;
+          }
+          if (process.env.MINI_APP_VERSION) {
+            manifest.version = process.env.MINI_APP_VERSION;
+          }
+          return JSON.stringify(manifest);
+        }
+      },
+    },
     {
       name: "demo-body",
       transformIndexHtml(html) {

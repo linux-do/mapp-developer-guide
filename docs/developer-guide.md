@@ -57,6 +57,7 @@ media/…       可选，列入 media
   "script": "app.js",
   "style": "app.css",
   "permissions": ["user.read", "theme.read"],
+  "tags": ["工具", "社区"],
   "assets": ["data/settings.json", "images/logo.png"]
 }
 ```
@@ -64,6 +65,7 @@ media/…       可选，列入 media
 - `id` 使用应用页面分配的值，原样复制，不要自行生成；示例 ID 要替换成自己的 ID。
 - `version` 使用 `x.x.x` 三段数字，如 `1.2.0`，不带前导零或后缀，最长 64 字符。同一版本可上传多个沙箱构建；新建正式发布时必须高于历史最高正式版本。
 - `entry/script/style` 固定如上；`permissions` 是申请列表，以实际批准结果为准。
+- 可选 `tags` 为标签字符串数组，数量以社区设置为准（默认 5 个），每项 1–64 字符，去除首尾空白、转为小写并去重。标签随版本审核；修改需重新提包。
 - 可选 `assets` 是包内普通资源的路径数组。五个基础文件无需重复列入，`media` 已声明的文件也不要再列入；读取自带文件无需额外权限，见 [文件读取](../sdk/README.md#包内文件)。
 - 大素材可以通过 `remote_assets` 声明固定的开发者 CDN 文件，并申请 `assets.remote`，详见下节。它们不放入 ZIP，也不重复列入 `assets`。
 - 网络通过可选 `endpoints/websockets` 声明，见 [HTTP/WS](sdk-network.md)。

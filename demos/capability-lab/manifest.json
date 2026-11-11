@@ -2,7 +2,8 @@
   "format": 1,
   "id": "01a19674-905b-7246-99ff-2f5e270a3f8f",
   "name": "能力测试台",
-  "version": "1.0.1",
+  "tags": ["开发工具", "sdk", "示例"],
+  "version": "1.1.0",
   "entry": "index.html",
   "script": "app.js",
   "style": "app.css",
@@ -23,9 +24,34 @@
     "pointer.lock",
     "video.play",
     "network.request",
-    "network.websocket"
+    "network.websocket",
+    "notifications",
+    "app.call",
+    "audio.worklet",
+    "video.stream",
+    "assets.remote",
+    "links.open",
+    "files.save",
+    "sharing.share",
+    "screen.keepAwake",
+    "gamepad.read",
+    "code.load",
+    "code.modules",
+    "workers.create",
+    "code.eval",
+    "camera",
+    "microphone",
+    "screen.capture",
+    "location.read"
   ],
-  "assets": ["wasm/answer.wasm"],
+  "assets": [
+    "wasm/answer.wasm",
+    "chunks/sample.js",
+    "modules/sample.mjs",
+    "modules/bundle.mjs",
+    "workers/sum.js",
+    "audio/tone.js"
+  ],
   "media": {
     "chime": {
       "path": "media/chime.wav",
@@ -39,5 +65,24 @@
     }
   },
   "endpoints": {},
-  "websockets": {}
+  "websockets": {},
+  "code": {
+    "scripts": ["chunks/sample.js"],
+    "modules": ["modules/sample.mjs"],
+    "moduleBundle": "modules/bundle.mjs",
+    "workers": ["workers/sum.js"],
+    "worklets": {
+      "audio/tone.js": "827fd982102157501fa16d4c72e4c15372f840947f08ce0756adef26e3dc13d9"
+    }
+  },
+  "calls": [],
+  "links": [],
+  "remote_assets": {},
+  "devices": {},
+  "notifications": {
+    "reminder": {
+      "title": "%app_name% 提醒",
+      "body": "能力测试台的演示提醒已到。"
+    }
+  }
 }

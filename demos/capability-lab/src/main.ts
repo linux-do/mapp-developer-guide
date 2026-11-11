@@ -2,6 +2,7 @@ import "./style.css";
 import type {
   HttpMethod,
   HttpRequestOptions,
+  HttpResponseType,
   MiniAppSDK,
   MiniAppSocket,
   MiniAppTheme,
@@ -9,6 +10,7 @@ import type {
 } from "@discourse-mini-app/sdk";
 import { getSDK } from "@discourse-mini-app/sdk";
 import manifest from "../manifest.json";
+import { createExtendedSamples } from "./extended.ts";
 import type { PointerSnapshot } from "./pointer.ts";
 import { createPointerSample } from "./pointer.ts";
 import type { PointerLockSnapshot } from "./pointer-lock.ts";
@@ -46,6 +48,7 @@ type TemplateElements = {
   permissions: HTMLElement;
   "lookup-user-id": HTMLInputElement;
   "identity-output": HTMLElement;
+  "user-avatar": HTMLImageElement;
   "storage-key": HTMLInputElement;
   "storage-value": HTMLTextAreaElement;
   "allow-clear": HTMLInputElement;
@@ -74,12 +77,14 @@ type TemplateElements = {
   "network-config": HTMLElement;
   "http-endpoint": HTMLInputElement;
   "http-method": HTMLSelectElement;
+  "http-response": HTMLSelectElement;
   "http-query": HTMLTextAreaElement;
   "http-body": HTMLTextAreaElement;
   "http-output": HTMLOutputElement;
   "socket-endpoint": HTMLInputElement;
   "socket-query": HTMLTextAreaElement;
   "socket-data": HTMLTextAreaElement;
+  "socket-text-mode": HTMLSelectElement;
   "socket-output": HTMLOutputElement;
   results: HTMLElement;
   "results-title": HTMLElement;
@@ -164,7 +169,11 @@ const t = (key: string, values: Record<string, unknown> = {}) =>
     (_: string, name: string) => String(values[name] ?? "")
   );
 const bytes = (value: unknown) =>
-  new TextEncoder().encode(JSON.stringify(value) ?? "null").length;
+  value instanceof Uint8Array
+    ? value.byteLength
+    : new TextEncoder().encode(
+        typeof value === "string" ? value : (JSON.stringify(value) ?? "null")
+      ).length;
 const output = (id: string, value: string) => {
   const target = element(id);
   target.textContent = value;
@@ -218,7 +227,14 @@ function renderState(state: RunnerState) {
   for (const button of document.querySelectorAll<HTMLButtonElement>(
     "[data-action]"
   )) {
-    button.disabled = state.mode !== "connected";
+    const startsVideo = ["videoPlay", "videoProgram"].includes(
+      button.dataset.action || ""
+    );
+    const videoPending = state.pendingOperations?.some((name) =>
+      ["videoPlay", "videoProgram"].includes(name)
+    );
+    button.disabled =
+      state.mode !== "connected" || !!(startsVideo && videoPending);
   }
   const rows = state.entries.map((entry) => {
     const item = document.createElement("li");
@@ -334,6 +350,11 @@ function localize() {
   document.querySelectorAll<HTMLElement>("[data-label]").forEach((node) => {
     node.setAttribute("aria-label", t(node.dataset.label!));
   });
+  document
+    .querySelectorAll<HTMLElement>("[data-placeholder]")
+    .forEach((node) => {
+      node.setAttribute("placeholder", t(node.dataset.placeholder!));
+    });
   const http = Object.keys(manifest.endpoints || {}).length;
   const ws = Object.keys(manifest.websockets || {}).length;
   output(
@@ -451,8 +472,16 @@ function attachSocket(connection: MiniAppSocket) {
       received++;
       networkOutput(
         "socket-output",
-        t("socketReceived", { count: received, bytes: bytes(data) }),
-        data
+        t("socketReceived", {
+          count: received,
+          bytes: data instanceof Uint8Array ? data.byteLength : bytes(data),
+        }),
+        data instanceof Uint8Array
+          ? {
+              bytes: data.byteLength,
+              preview: Array.from(data.subarray(0, 32)),
+            }
+          : data
       );
       runner.record("socketMessage", "success");
     }),
@@ -476,7 +505,32 @@ function attachSocket(connection: MiniAppSocket) {
   ];
 }
 
+const extended = createExtendedSamples({
+  getSDK: () => {
+    if (!sdk) {
+      throw error("NOT_CONNECTED");
+    }
+    return sdk;
+  },
+  manifest,
+  run,
+  show: (id, value) => {
+    if (typeof value === "string") {
+      output(id, value);
+    } else {
+      dataOutput(id, value);
+    }
+  },
+  t,
+  getVideo: () => videoHandle,
+  setVideo: (handle) => {
+    videoHandle = handle;
+  },
+  getSocket: () => socket,
+});
+Object.assign(operationOutputs, extended.outputs);
 const actions: Record<string, () => Promise<void>> = {
+  ...extended.actions,
   wasm: () =>
     run(
       "wasm",
@@ -516,6 +570,14 @@ const actions: Record<string, () => Promise<void>> = {
       "user",
       () => sdk!.user.getCurrent(),
       (value) => {
+        const avatar = element("user-avatar");
+        const avatarUrl = value?.avatarUrl;
+        avatar.hidden = !avatarUrl?.startsWith("blob:");
+        if (avatarUrl?.startsWith("blob:")) {
+          avatar.src = avatarUrl;
+        } else {
+          avatar.removeAttribute("src");
+        }
         value === null
           ? output("identity-output", t("anonymous"))
           : dataOutput("identity-output", value);
@@ -715,23 +777,42 @@ const actions: Record<string, () => Promise<void>> = {
       "http",
       () => {
         const method = element("http-method").value as HttpMethod;
-        const options: HttpRequestOptions = {
+        const options: HttpRequestOptions<HttpResponseType> = {
           method,
+          responseType: element("http-response").value as HttpResponseType,
           query: parseJsonInput(element("http-query").value) as Record<
             string,
             string
           >,
         };
-        if (method !== "GET") {
+        if (method !== "GET" && method !== "HEAD") {
           options.json = parseJsonInput(element("http-body").value);
         }
-        return sdk!.http.request(element("http-endpoint").value, options);
+        return sdk!.http.request<HttpResponseType>(
+          element("http-endpoint").value,
+          options
+        );
       },
       (value) =>
         networkOutput(
           "http-output",
-          t("httpResult", { status: value.status, bytes: bytes(value.body) }),
-          { headers: value.headers, body: value.body }
+          t("httpResult", {
+            status: value.status,
+            bytes:
+              value.body instanceof Uint8Array
+                ? value.body.byteLength
+                : bytes(value.body),
+          }),
+          {
+            headers: value.headers,
+            body:
+              value.body instanceof Uint8Array
+                ? {
+                    bytes: value.body.byteLength,
+                    preview: Array.from(value.body.subarray(0, 32)),
+                  }
+                : value.body,
+          }
         )
     ),
   socketConnect: () =>
@@ -742,6 +823,7 @@ const actions: Record<string, () => Promise<void>> = {
           throw error("BUSY");
         }
         return sdk!.webSocket.connect(element("socket-endpoint").value, {
+          textMode: element("socket-text-mode").value as "auto" | "text",
           query: parseJsonInput(element("socket-query").value) as Record<
             string,
             string
@@ -1002,6 +1084,7 @@ document.addEventListener("visibilitychange", () => {
     pointerLock.release();
     pointerSample.finish("pointerHidden");
     toneSample.stop();
+    void extended?.cancel();
   }
 });
 
@@ -1068,6 +1151,7 @@ element("sample-form").addEventListener("submit", (event) => {
 });
 element("stop-waiting").addEventListener("click", () => {
   toneSample.stop();
+  void extended?.cancel();
   for (const operation of latestState!.pendingOperations || []) {
     if (operationOutputs[operation]) {
       output(operationOutputs[operation], t("stoppedWaiting"));
@@ -1077,6 +1161,10 @@ element("stop-waiting").addEventListener("click", () => {
 });
 element("clear-results").addEventListener("click", () => runner.clear());
 element("clear-private").addEventListener("click", () => {
+  void extended?.cancel();
+  extended?.clearPrivate();
+  element("user-avatar").hidden = true;
+  element("user-avatar").removeAttribute("src");
   for (const id of [
     "identity-output",
     "storage-output",
@@ -1105,10 +1193,12 @@ async function initialize() {
       .catch((failure) =>
         runner.record("permissions", "failed", { code: safeCode(failure) })
       );
+    await extended?.initialize().catch(() => {});
   }
 }
 void initialize();
 window.addEventListener("pagehide", () => {
+  extended?.dispose();
   pointerLock.dispose();
   pointerSample.finish("pointerHidden");
   toneSample.stop();

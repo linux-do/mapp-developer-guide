@@ -26,7 +26,7 @@ MINI_APP_ID=平台应用ID MINI_APP_VERSION=1.0.0 bun run build
 
 `build` 先做类型检查，再生成 `dist/package/app.zip`。应用 ID 从应用页面复制；只上传这个 ZIP，内容变化使用新版本号。已有缓存可加 `--offline` 安装。
 
-本地预览只调试布局和业务，不安装假 SDK。真实能力在上传后的 `/apps-sandbox/<app-id>/<version>-<8-char-sha>` 中检查。游戏通过 `user/theme/localStorage` 使用获准能力，存储失败仍可游玩；能力测试台还提供 Cookie、剪贴板、全屏、媒体与网络展示。
+本地预览只调试布局和业务，不安装假 SDK。真实能力在上传后的 `/apps-sandbox/<app-id>/<version>-<8-char-sha>` 中检查。游戏通过 `user/theme/localStorage` 使用获准能力，存储失败仍可游玩；能力测试台还覆盖分包、Worker、AudioWorklet、设备、通知、应用调用与流传输。
 
 源码入口为 `src/main.ts`，正文为 `src/template.html`，配置和打包脚本分别在 `vite.config.ts`、`scripts/`。ZIP 包含五个基本文件及已声明的 `assets/media` 资源，见 [开发说明](../docs/developer-guide.md)。
 

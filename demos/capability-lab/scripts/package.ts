@@ -1,5 +1,6 @@
 import type { MiniAppManifest } from "@discourse-mini-app/sdk/pack";
-import { pack } from "@discourse-mini-app/sdk/pack";
+import { bundleModules, pack } from "@discourse-mini-app/sdk/pack";
+import { createHash } from "node:crypto";
 import { copyFile, readFile } from "node:fs/promises";
 import { mediaAssets } from "./media.ts";
 
@@ -11,19 +12,37 @@ manifest.version = process.env.MINI_APP_VERSION || manifest.version;
 await copyFile("src/template.html", "dist/web/index.html");
 await copyFile("src/strings.json", "dist/web/strings.json");
 const files = mediaAssets();
-for (const name of ["index.html", "app.js", "app.css", "strings.json"]) {
-  files[name] = await readFile(`dist/web/${name}`);
-}
-for (const path of manifest.assets || []) {
+function assetPath(path: string) {
   if (
-    !/^[a-zA-Z0-9_.\-/]{1,160}$/.test(path) ||
+    !path ||
+    path.includes("\\") ||
     path.split("/").some((part) => !part || part === "." || part === "..")
   ) {
     throw new Error("Invalid package asset path");
   }
-  if (!Object.hasOwn(files, path)) {
-    files[path] = await readFile(`dist/web/${path}`);
+  return `dist/web/${path}`;
+}
+if (manifest.code?.moduleBundle && manifest.code.modules?.length) {
+  const modules: Record<string, string> = {};
+  for (const path of manifest.code.modules) {
+    modules[path] = await readFile(assetPath(path), "utf8");
   }
+  files[manifest.code.moduleBundle] = Buffer.from(
+    await bundleModules({ files: modules })
+  );
+}
+for (const name of ["index.html", "app.js", "app.css", "strings.json"]) {
+  files[name] = await readFile(`dist/web/${name}`);
+}
+for (const path of manifest.assets || []) {
+  if (!Object.hasOwn(files, path)) {
+    files[path] = await readFile(assetPath(path));
+  }
+}
+for (const path of Object.keys(manifest.code?.worklets || {})) {
+  manifest.code!.worklets![path] =
+    manifest.remote_assets?.[path]?.sha256 ??
+    createHash("sha256").update(files[path]!).digest("hex");
 }
 const result = await pack({ manifest, files, outputDirectory: "dist/package" });
 console.log(
