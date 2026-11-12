@@ -26,7 +26,7 @@
 - [ ] 手机、键盘、深浅主题、存储恢复、离开再打开均可用。
 - [ ] 只使用公开 SDK，不访问父 DOM、论坛 Cookie 或绕过网络限制。应用调用使用 `app.call/return`，`calls` 清单与实际目标一致。
 - [ ] 剪贴板、全屏和媒体由明确操作触发；不伪装社区登录或诱导输入密码。
-- [ ] HTTP 服务配置 CORS；受保护接口在 JWT 缺失/无效时拒绝，不能回退 Cookie 鉴权。公开 `auth: none` 接口不依赖用户身份。受保护 WS 在 upgrade 前验证 JWT；已建立连接无需因 JWT 到期或固定时长而关闭，服务端仍检查业务权限。
+- [ ] HTTP 服务配置 CORS；`auth: platform` 在 JWT 缺失或无效时拒绝，`auth: auto` 只允许缺失 JWT 的请求按匿名处理，无效 JWT 仍须拒绝；`auth: none` 不依赖用户身份。受保护 WS 在 upgrade 前验签；已建立连接无需因 JWT 到期或固定时长而关闭，服务端仍检查业务权限。
 - [ ] CDN 素材申请了 `assets.remote`，公开 HTTPS 地址允许 CORS GET、无重定向和登录要求；真实文件大小、MIME、SHA-256 与清单一致，加载失败有反馈。修改内容或地址后更新清单并重新提审。
 - [ ] sandbox 中检查的是本次申请版本和同一份 ZIP。
 

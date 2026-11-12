@@ -2,6 +2,8 @@
 
 声明 `auth: "platform"` 的 HTTP 和 WSS 接口都要验证平台 JWT。使用 `@discourse-mini-app/sdk/server`，不要只解码 payload。HTTP 从 `Authorization: Bearer …` 读取，WSS 在 upgrade 前验证 `mini_app_token` query。公开的 `auth: "none"` 端点不收到这个 JWT，也不能据此取得平台用户身份。
 
+`auth: "auto"` 允许匿名和登录用户访问同一接口：JWT 缺失时按匿名处理；JWT 存在时必须验签，无效则拒绝。
+
 固定配置社区地址、服务 HTTPS origin、平台分配的应用 ID、环境和社区提供的 JWT 验证公钥；不要按未验证请求里的地址选择公钥。此入口只用于 Node/Bun 服务端。
 
 ## 获取 JWT 验证公钥

@@ -40,7 +40,15 @@
 | WS 子协议             | 在 manifest 的 `protocols` 声明；不支持自定义握手 headers                                                                         |
 | 声明大小              | 总声明与其他字段共用 manifest 的 1 MiB 预算；单端点最多 64 KiB，保证授权凭据可正常签发；不另设端点、query、header、子协议数量配额 |
 
-公开 HTTP 和 WS 可用 `auth: "none"`；站点允许匿名应用时，访客也可调用获批 `network.request` / `network.websocket` 的这些端点，不附带平台 JWT。受保护端点使用 `auth: "platform"`，还需获准 `user.read` 并登录；服务端须验证 JWT 并检查业务权限，见 [服务端鉴权](server-auth.md)。匿名不能取得平台身份 JWT。
+HTTP 和 WS 都支持以下 `auth` 模式：
+
+| 模式       | 行为                                   |
+| ---------- | -------------------------------------- |
+| `none`     | 不携带平台 JWT                         |
+| `platform` | 要求登录，携带平台 JWT                 |
+| `auto`     | 匿名运行不携带 JWT，登录运行时携带 JWT |
+
+`platform`、`auto` 还需声明 `user.read`。站点允许匿名应用时，访客可调用获批的 `none`、`auto` 端点。服务端收到 JWT 时须验签并检查业务权限，见 [服务端鉴权](server-auth.md)。
 
 ## HTTP
 
@@ -77,8 +85,17 @@ HTTP 不携带 Cookie，默认不跟随重定向。确需跳转时，在源 HTTP
 ```json
 {
   "endpoints": {
-    "download": { "url": "https://api.example.com/download", "method": "GET", "auth": "platform", "redirectTo": "file" },
-    "file": { "url": "https://files.example.com/current.bin", "method": "GET", "auth": "none" }
+    "download": {
+      "url": "https://api.example.com/download",
+      "method": "GET",
+      "auth": "platform",
+      "redirectTo": "file"
+    },
+    "file": {
+      "url": "https://files.example.com/current.bin",
+      "method": "GET",
+      "auth": "none"
+    }
   }
 }
 ```

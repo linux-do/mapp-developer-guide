@@ -132,7 +132,7 @@ const { module, instance } = await sdk.wasm.instantiate("wasm/answer.wasm");
 - CDN 须允许论坛 origin 的 CORS GET，例如 `Access-Control-Allow-Origin: https://community.example.com`；origin 不含论坛子目录。填写最终地址，不依赖重定向、Cookie、Authorization 或短期登录链接。CDN 会收到访问者的 IP，但不会收到论坛 Cookie 或平台 JWT。
 - 保持同一 URL 的文件字节稳定，优先使用带版本或内容哈希的 URL，不覆盖旧发布版本仍引用的素材。关闭会改变文件内容的自动图片转码、按设备返回不同格式等功能。`size` 和 SHA-256 对应下载后的资源字节，不是外层 HTTP 压缩传输长度。
 - URL 路径中的空格、方括号等特殊字符必须百分号编码；URL 不能包含原始换行、制表符或反斜杠。虚拟路径和媒体 ID 仍只接受各自规定的字符，不接受末尾换行。
-- 已公开运行且获批的应用可在访客模式读取这些固定素材。公开 HTTP/WS 另需对应网络权限和 `auth: "none"`；平台身份端点仍需登录。远程 JavaScript 必须声明 `code` 执行角色、对应权限和 `assets.remote`，见[执行能力](execution.md)。远程 HTML、CSS 和 source map 不作为素材接受。
+- 已公开运行且获批的应用可在访客模式读取这些固定素材。公开 HTTP/WS 另需对应网络权限和 `auth: "none"` 或 `auth: "auto"`；`auto` 在登录运行时携带平台 JWT。远程 JavaScript 必须声明 `code` 执行角色、对应权限和 `assets.remote`，见[执行能力](execution.md)。远程 HTML、CSS 和 source map 不作为素材接受。
 
 可以在构建脚本中用本地原文件生成描述符，再将原文件原样上传到 CDN：
 
